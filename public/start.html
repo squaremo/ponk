@@ -60,15 +60,18 @@
         <div class="span10">
           <div id="login-window">
 			<h2>Starting a new game...</h2>
-            <form method="post" action="/login" id="signin">
+            <form id="signin" method="get" action="#">
 				<p>
 					<label for="username">Select a username:</label>
 					<input type="text" id="username" name="username" value="" />
 				</p>
 				<p>
-					<a href="#" class="btn btn-primary btn-large">Start matchmaking...</a>
+					<a id="signin-button" href="#" class="btn btn-primary btn-large">Start matchmaking...</a>
 				</p>
 			</form>
+          </div>
+          <div id="log-window">
+			xxx
           </div>
           <div id="game-window">
             xxx
@@ -95,6 +98,10 @@
     ================================================== -->
     <!-- Placed at the end of the document so the pages load faster -->
     <script src="js/jquery.js"></script>
+    <script src="js/bootstrap.min.js"></script>
+	<script src="http://cdn.sockjs.org/sockjs-0.3.min.js"></script>
+    <script src="js/ponk.js"></script>
+	<!--
     <script src="js/bootstrap-transition.js"></script>
     <script src="js/bootstrap-alert.js"></script>
     <script src="js/bootstrap-modal.js"></script>
@@ -107,8 +114,6 @@
     <script src="js/bootstrap-collapse.js"></script>
     <script src="js/bootstrap-carousel.js"></script>
     <script src="js/bootstrap-typeahead.js"></script>
-	<script src="http://cdn.sockjs.org/sockjs-0.3.min.js"></script>
-    <script src="js/ponk.js"></script>
-
+	-->
   </body>
 </html>
