@@ -17,10 +17,13 @@ $('#signin').submit( function() {
 	$('#login-window').hide();
 
 	var username = $("input#username").val();
-	sock.send(username);
+        sock.send(JSON.stringify(event('register', username)));
 
 	$('#log-window').show();
 
 	return false;
 });
 
+function event(type, data) {
+  return {'event': type, 'data': data};
+}
