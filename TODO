@@ -3,3 +3,4 @@
 - pause game, temporary suspension
 - recover game state on refresh, via cookie (status, username)
 - geo-matching
+- sound effect on ball bounce

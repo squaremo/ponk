@@ -52,7 +52,7 @@ function handleHighscore(payload) {
 	// NO-OP server -> client
 }
 
-var dictionary = []
+var dictionary = [];
 dictionary['register'] = handleRegister;
 dictionary['start'] = handleStart;
 dictionary['pause'] = handlePause;
@@ -134,26 +134,26 @@ function event(type, data) {
 }
 
 function startGame() {
-	game.status = 1
-	renderTimer = setInterval('render()', 500)
+  game.status = 1;
+  renderTimer = setInterval('render()', 500);
 }
 
 function restartGame() {
 	// TODO kill & restart render timer
-	game.status = 1
-	renderTimer = setInterval('render()', 500)
+  game.status = 1;
+  renderTimer = setInterval('render()', 500);
 }
 
 function pauseGame() {
 	// TODO send pause request
-	game.status = 2
-	clearInterval(renderTimer)
+  game.status = 2;
+  clearInterval(renderTimer);
 }
 
 function stopGame() {
 	// TODO kill render timer
-	game.status = 0
-	clearInterval(renderTimer)
+  game.status = 0;
+  clearInterval(renderTimer);
 }
 
 function render() {
