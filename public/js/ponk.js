@@ -91,7 +91,7 @@ sock.onclose = function() {
 
 $(document).ready( function() {
 	// TODO load game status from cookie
-	var username = $cookie("ponk-username");
+	var username = ''; // $.cookie("ponk-username");
 	if (game.status == 2) {
 		restartGame();
 	}
@@ -116,7 +116,7 @@ $('#signin').submit( function() {
 		return false;
 	}
 
-	$.cookie("ponk-username", username, { expires: 7 });
+	// $.cookie("ponk-username", username, { expires: 7 });
 	$('#login-window').hide();
 	$('#log-window').show();
 
