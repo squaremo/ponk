@@ -37,6 +37,10 @@ function Player(conn) {
   this.handler = registering;
 }
 
+Player.prototype.event = function(name, data) {
+  this.connection.write(JSON.stringify({event: name, data: data}));
+}
+
 Player.prototype.breakHorribly = function(state, event) {
   debug({bork: {state: state, event: event}});
 }
@@ -59,16 +63,27 @@ Player.prototype.match = function() {
 };
 
 Player.prototype.play = function(opponent) {
-  this.connection.write(JSON.stringify({event: 'start', data: opponent.info}));
-  this.handler = playing;
+  this.event('start', opponent.info);
+  this.handler = playing_f(opponent);
 }
 
 function matching(event) {
   this.breakHorribly('matching', event);
 }
 
-function playing(event) {
-  debug({player: this.info, event: event});
+function playing_f(opponent) {
+  return function(event) {
+    debug({player: this.info, event: event});
+    switch (event.event) {
+    case 'pos':
+    case 'win':
+    case 'move':
+      opponent.event(event.event, event.data);
+      break;
+    default:
+      this.breakHorribly('playing', event);
+    }
+  };
 }
 
 var queue = [];
@@ -90,23 +105,6 @@ function gameOn(player1, player2) {
   debug("Matching " + player1.info.name + " with " + player2.info.name);
   player1.play(player2);
   player2.play(player1);
-  playUntilFinish(player1, player2);
-}
-
-function playUntilFinish(player1, player2) {
-  function hookup(player1, player2) {
-    player1.connection.on('data', function(msg) {
-      var event = JSON.parse(msg);
-      switch (event.event) {
-      case 'pos':
-      case 'win':
-      case 'move':
-        player2.connection.write(msg);
-      }
-    });
-  }
-  hookup(player1, player2);
-  hookup(player2, player1);
 }
 
 // Fight!
