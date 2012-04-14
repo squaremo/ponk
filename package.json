@@ -1,0 +1,19 @@
+{
+  "author": "Michael Bridgen <mikeb@squaremobius.net>",
+  "name": "ponk",
+  "description": "Ponk game.",
+  "version": "0.0.0",
+  "repository": {
+    "url": ""
+  },
+  "main": "app.js",
+  "dependencies": {},
+  "devDependencies": {
+    "sockjs": "~0.3",
+    "express": "*"
+  },
+  "optionalDependencies": {},
+  "engines": {
+    "node": "*"
+  }
+}
