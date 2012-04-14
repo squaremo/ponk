@@ -1,0 +1,2 @@
+var sock = new SockJS('');
+

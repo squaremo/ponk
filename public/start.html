@@ -58,7 +58,18 @@
       <!-- Example row of columns -->
       <div class="row">
         <div class="span10">
-          <h2>Game</h2>
+          <div id="login-window">
+			<h2>Starting a new game...</h2>
+            <form method="post" action="/login" id="signin">
+				<p>
+					<label for="username">Select a username:</label>
+					<input type="text" id="username" name="username" value="" />
+				</p>
+				<p>
+					<a href="#" class="btn btn-primary btn-large">Start matchmaking...</a>
+				</p>
+			</form>
+          </div>
           <div id="game-window">
             xxx
           </div>
@@ -96,6 +107,7 @@
     <script src="js/bootstrap-collapse.js"></script>
     <script src="js/bootstrap-carousel.js"></script>
     <script src="js/bootstrap-typeahead.js"></script>
+	<script src="http://cdn.sockjs.org/sockjs-0.3.min.js"></script>
     <script src="js/ponk.js"></script>
 
   </body>

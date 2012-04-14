@@ -1,4 +1,5 @@
 div#game-window {
+	display: none;
 	margin: 10px auto;
 	padding: 10px;
 	width: 600px;
