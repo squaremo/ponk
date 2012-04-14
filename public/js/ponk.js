@@ -147,9 +147,13 @@ $('#signin').submit( function() {
 	$('#log-window').show();
 
 	log("Sending username...");
-	sock.send("{'register': '" + username + "'}");
+        sock.send(event('register', username));
 	return false;
 });
+
+
+function event(type, data) {
+  return JSON.stringify({'event': type, 'data': data});
 
 function startGame() {
 	game.status = 1

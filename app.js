@@ -30,34 +30,82 @@ game state is sent at each event; i.e., the sides synchronise.
 In addition, the paddle position is sent every (few?) frame(s).
 
 A win must be agreed by both sides: when the winning score is reached
-by *either* side, *each* side sends a win message naming the score,
-and waits for the corresponding iwn message from the other side. If
-they match the side sends a vote for the result to the server; once a
-vote from each side is recved the win is recorded.
+by *either* side, *each* side sends a win message (with 'me' meaning
+the sending side) naming the score, and waits for the corresponding
+win message from the other side. If they match the side sends a vote
+for the result to the server; once a vote from each side is recved the
+win is recorded and the result is sent to each.
 
 # Protocol
 # ! = send
 # ? = recv
 
-Start := !Name ?Start Game
-Game := (!Event | ?Event | Win)*
-Event := {'p1y': int, 'p2y': int, 'ballx': int, 'bally': int}
-Win := !Win ?Win
+Start := !Register ?Start Game
+Game := (!Move | ?Move | !Pos | ?Pos)* End
+Move := {'event': 'move', 'data': State}
+State := {'p1y': int, 'p2y': int, 'ball': Ball}
+Ball := {'x': int, 'y': int, 'vx': int, 'vy': int}
+End := !Win ?Win !Vote ?Result
 
+Register := {'event': 'register', 'data': Name}
 Name := string
-Start := {'start': Player}
+Start := {'event': 'start', 'data': Player}
 Player := {'name': string, 'wins': int}
+Pos := {'event': 'pos', 'y': int}
+Win := {'event': 'win', 'score': {'me': int, 'you': int}}
 
 */
 
 
 function initPlayer(connection) {
+  var player = new Player(connection);
   connection.on('data', function(msg) {
-    connection.removeAllListeners('data');
-    var player = new Player(connection, msg);
-    debug("Welcome player " + player.info.name);
-    makeMatches(player);
+    var event = JSON.parse(msg);
+    player.handler(event);
   });
+  connection.on('end', function() {
+    // Um.
+  });
+}
+
+function Player(conn) {
+  this.info = {wins: 0};
+  this.connection = conn;
+  this.handler = registering;
+}
+
+Player.prototype.breakHorribly = function(state, event) {
+  debug({bork: {state: state, event: event}});
+}
+
+function registering(event) {
+  switch (event.event) {
+  case 'register':
+    this.info.name = event.data;
+    debug({welcome: this.info});
+    this.match();
+    break;
+  default:
+    this.breakHorribly('registering', event);
+  }
+}
+
+Player.prototype.match = function() {
+  this.handler = matching;
+  makeMatches(this);
+};
+
+Player.prototype.play = function(opponent) {
+  this.connection.write(JSON.stringify({event: 'start', data: opponent.info}));
+  this.handler = playing;
+}
+
+function matching(event) {
+  this.breakHorribly('matching', event);
+}
+
+function playing(event) {
+  debug({player: this.info, event: event});
 }
 
 var queue = [];
@@ -77,8 +125,25 @@ function attemptMatches() {
 
 function gameOn(player1, player2) {
   debug("Matching " + player1.info.name + " with " + player2.info.name);
-  player1.connection.write(JSON.stringify({start: player2.info}));
-  player2.connection.write(JSON.stringify({start: player1.info}));
+  player1.play(player2);
+  player2.play(player1);
+  playUntilFinish(player1, player2);
+}
+
+function playUntilFinish(player1, player2) {
+  function hookup(player1, player2) {
+    player1.connection.on('data', function(msg) {
+      var event = JSON.parse(msg);
+      switch (event.event) {
+      case 'pos':
+      case 'win':
+      case 'move':
+        player2.connection.write(msg);
+      }
+    });
+  }
+  hookup(player1, player2);
+  hookup(player2, player1);
 }
 
 // Fight!
