@@ -124,6 +124,9 @@ $('#signin').submit( function() {
         sock.send(event('register', username));
 
 	// temp testing, for renderer
+	$('#game-window').show();
+	initGame();
+	render();
 
 	return false;
 });
@@ -156,8 +159,43 @@ function stopGame() {
   clearInterval(renderTimer);
 }
 
-function render() {
+function initGame() {
 	//
+}
+
+function render() {
+	// TODO find localPlayer
+	var canvas = document.getElementById('game-field'); // jquery didn't find this
+	var context = canvas.getContext('2d');
+	// field is 400 high & 600 wide
+	// context.fillRect(x, y, w, h);
+	var offset = 10;
+	var paddleWidth = 10;
+	var localH = 80;
+	var remoteH = 80;
+
+	var localX = offset;
+	var remoteX = canvas.width - (offset + paddleWidth);
+
+	var localY = canvas.height/2 - (localH/2); // temp, needs further calc
+	var remoteY = canvas.height/2 - (remoteH/2); // temp, needs further calc
+
+	context.fillStyle = '#cc9999';
+	context.fillRect(localX, localY, paddleWidth, localH);
+	context.fillStyle = '#9999cc';
+	context.fillRect(remoteX, remoteY, paddleWidth, remoteH);
+
+	context.fillStyle = '#333333';
+	context.beginPath();
+
+	// ontext.arc(x, y, r, n, Math.PI*2, true);
+	var ballX = canvas.width/2;
+	var ballY = canvas.height/2;
+	var radius = 10;
+	var other = 0;
+	context.arc(ballX, ballY, radius, other, Math.PI*2, true);
+	context.closePath();
+	context.fill();
 }
 
 function log(msg) {
