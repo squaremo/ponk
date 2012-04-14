@@ -60,11 +60,6 @@ function initPlayer(connection) {
   });
 }
 
-function Player(conn, name) {
-  this.info = {name: name, wins: 0};
-  this.connection = conn;
-}
-
 var queue = [];
 function makeMatches(player) {
   queue.push(player);

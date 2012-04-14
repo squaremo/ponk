@@ -2,9 +2,10 @@ var sock = new SockJS('/socks');
 sock.onopen = function() {
 	console.log('open');
 };
+
 sock.onmessage = function(e) {
 	console.log('message', e.data);
-	log("Sending username...");
+	log("Received message... " + e.data);
 };
 
 sock.onclose = function() {
@@ -14,6 +15,7 @@ sock.onclose = function() {
 $('#signin-button').click( function() {
 	$('#signin').submit();
 });
+
 
 $('#signin').submit( function() {
 	var username = $("input#username").val();
@@ -26,7 +28,7 @@ $('#signin').submit( function() {
 	$('#log-window').show();
 
 	log("Sending username...");
-	sock.send(username);
+	sock.send("{'register': '" + username + "'}");
 	return false;
 });
 
