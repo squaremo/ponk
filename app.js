@@ -19,6 +19,23 @@ socks.on('connection', function(conn) {
   initPlayer(conn);
 });
 
+/*
+
+# Protocol
+# ! = send
+# ? = recv
+
+Start := !Name ?Start Game
+Game := (!Move | ?Move | Win)*
+Win := !Win ?Win
+
+Name := string
+Start := {'start': Player}
+Player := {'name': string, 'wins': int}
+
+*/
+
+
 function initPlayer(connection) {
   connection.on('data', function(msg) {
     connection.removeAllListeners('data');
