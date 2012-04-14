@@ -42,6 +42,21 @@ function handleStart(payload) {
 	// NO-OP server -> client
 }
 
+function handlePause(payload) {
+	console.log('pause');
+	// NO-OP server -> client
+}
+
+function handleRestart(payload) {
+	console.log('restart');
+	// NO-OP server -> client
+}
+
+function handleStop(payload) {
+	console.log('stop');
+	// NO-OP server -> client
+}
+
 function handlePos(payload) {
 	console.log('pos');
 	// NO-OP server -> client
@@ -57,8 +72,19 @@ function handleHighscore(payload) {
 	// NO-OP server -> client
 }
 
+var dictionary = []
+dictionary['register'] = handleRegister;
+dictionary['start'] = handleStart;
+dictionary['pause'] = handlePause;
+dictionary['restart'] = handleRestart;
+dictionary['stop'] = handleStop;
+dictionary['pos'] = handlePos;
+dictionary['win'] = handleWin;
+dictionary['highscore'] = handleHighscore;
+
 // 2secs to cover 640x480 at 10f/s
 var game = {
+	'status': 0,
 	'localY': 50,
 	'remoteY': 50,
 	'ballPos': {
@@ -71,17 +97,11 @@ var game = {
 	}
 };
 
-var dictionary = []
-dictionary['register'] = handleRegister;
-dictionary['start'] = handleStart;
-dictionary['pos'] = handlePos;
-dictionary['win'] = handleWin;
-dictionary['highscore'] = handleHighscore;
-
 var scoreboard = [];
 var highscores = [];
 
 var sock = new SockJS('/socks');
+var renderTimer;
 
 sock.onopen = function() {
 	console.log('open');
@@ -100,10 +120,18 @@ sock.onclose = function() {
 	console.log('close');
 };
 
+$(document).ready( function() {
+	if (game.status == 0) {
+		$('#login-window').show();
+	}
+	else {
+		restartGame();
+	}
+});
+
 $('#signin-button').click( function() {
 	$('#signin').submit();
 });
-
 
 $('#signin').submit( function() {
 	var username = $("input#username").val();
@@ -119,8 +147,27 @@ $('#signin').submit( function() {
 	return false;
 });
 
+
 function event(type, data) {
   return JSON.stringify({'event': type, 'data': data});
+
+function startGame() {
+	game.status = 1
+}
+
+function restartGame() {
+	// TODO kill & restart render timer
+	game.status = 1
+}
+
+function pauseGame() {
+	// TODO send pause request
+	game.status = 2
+}
+
+function stopGame() {
+	// TODO kill render timer
+	game.status = 0
 }
 
 function render() {
