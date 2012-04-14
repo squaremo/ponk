@@ -1,4 +1,6 @@
 - sledging during the game
 - twitter name login & win reports
+- pause game, temporary suspension
+- recover game state on refresh, via cookie (status, username)
 - geo-matching
 - sound effect on ball bounce

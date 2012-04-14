@@ -1,36 +1,16 @@
-/*
- Each player sends when it has calculated either a bounce or a miss
- ('event') on its side. The ball moves deterministically in between
- these events, and is corrected at an event if necessary. The entire
- game state is sent at each event; i.e., the sides synchronise.
 
- In addition, the paddle position is sent every (few?) frame(s).
+function State() {
+	this.p1x = 0;
+	this.p1y = 0;
+	this.ball = new Ball();
+}
 
- A win must be agreed by both sides: when the winning score is reached
- by *either* side, *each* side sends a win message (with 'me' meaning
- the sending side) naming the score, and waits for the corresponding
- win message from the other side. If they match the side sends a vote
- for the result to the server; once a vote from each side is recved the
- win is recorded and the result is sent to each.
-
- # Protocol
- # ! = send
- # ? = recv
-
- Start := !Register ?Start Game
-   Game := (!Move | ?Move | !Pos | ?Pos)* End
- Move := {'event': 'move', 'data': State}
- State := {'p1y': int, 'p2y': int, 'ballx': int, 'bally': int}
-   End := !Win ?Win !Vote ?Result
-
- Register := {'event': 'register', 'data': Name}
-   Name := string
- Start := {'event': 'start', 'data': Player}
-   Player := {'name': string, 'wins': int}
- Pos := {'event': 'pos', 'y': int}
- Win := {'event': 'win', 'score': {'me': int, 'you': int}}
- Highscore := {'event': 'highscore', 'data': Player, 'score': int}
-*/
+function Ball() {
+	this.x = 0;
+	this.y = 0;
+	this.vx = 0;
+	this.vy = 0;
+}
 
 function handleRegister(payload) {
 	console.log('register');
@@ -44,12 +24,12 @@ function handleStart(payload) {
 
 function handlePause(payload) {
 	console.log('pause');
-	// NO-OP server -> client
+	// NO-OP server -> client, client -> server
 }
 
 function handleRestart(payload) {
 	console.log('restart');
-	// NO-OP server -> client
+	// NO-OP server -> client, client -> server
 }
 
 function handleStop(payload) {
@@ -82,20 +62,8 @@ dictionary['pos'] = handlePos;
 dictionary['win'] = handleWin;
 dictionary['highscore'] = handleHighscore;
 
-// 2secs to cover 640x480 at 10f/s
-var game = {
-	'status': 0,
-	'localY': 50,
-	'remoteY': 50,
-	'ballPos': {
-		'x': 0,
-		'y': 0
-	},
-	'vector': {
-		'a': 0,
-		'v': 0
-	}
-};
+// 2 secs to cover 640x480 at 10f/s
+var game = new State();
 
 var scoreboard = [];
 var highscores = [];
@@ -113,15 +81,17 @@ sock.onmessage = function(e) {
 	log("Received message... " + e.data);
 	var json = JSON.parse(e.data);
 	var func = dictionary[json['event']];
-	func(json.payload);
+	func(json.data);
 };
 
 sock.onclose = function() {
 	console.log('close');
+	stopGame();
 };
 
 $(document).ready( function() {
 	// TODO load game status from cookie
+	var username = ''; // $.cookie("ponk-username");
 	if (game.status == 2) {
 		restartGame();
 	}
@@ -129,7 +99,10 @@ $(document).ready( function() {
 		startGame();
 	}
 	else {
-	  $('#login-window').show();
+		if (username != null && username != '') {
+			$("input#username").val(username);
+		}
+		$('#login-window').show();
 	}
 });
 
@@ -143,11 +116,15 @@ $('#signin').submit( function() {
 		return false;
 	}
 
+	// $.cookie("ponk-username", username, { expires: 7 });
 	$('#login-window').hide();
 	$('#log-window').show();
 
 	log("Sending username...");
         sock.send(event('register', username));
+
+	// temp testing, for renderer
+
 	return false;
 });
 
