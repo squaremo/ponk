@@ -21,12 +21,26 @@ socks.on('connection', function(conn) {
 
 /*
 
+Each player sends when it has calculated either a bounce or a miss
+('event') on its side. The ball moves deterministically in between
+these events, and is corrected at an event if necessary. The entire
+game state is sent at each event; i.e., the sides synchronise.
+
+In addition, the paddle position is sent every (few?) frame(s).
+
+A win must be agreed by both sides: when the winning score is reached
+by *either* side, *each* side sends a win message naming the score,
+and waits for the corresponding iwn message from the other side. If
+they match the side sends a vote for the result to the server; once a
+vote from each side is recved the win is recorded.
+
 # Protocol
 # ! = send
 # ? = recv
 
 Start := !Name ?Start Game
-Game := (!Move | ?Move | Win)*
+Game := (!Event | ?Event | Win)*
+Event := {'p1y': int, 'p2y': int, 'ballx': int, 'bally': int}
 Win := !Win ?Win
 
 Name := string
