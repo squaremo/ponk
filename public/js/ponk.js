@@ -101,7 +101,7 @@ var scoreboard = [];
 var highscores = [];
 
 var sock = new SockJS('/socks');
-var renderTimer;
+var renderTimer = 0;
 
 sock.onopen = function() {
 	console.log('open');
@@ -121,11 +121,15 @@ sock.onclose = function() {
 };
 
 $(document).ready( function() {
-	if (game.status == 0) {
-		$('#login-window').show();
+	// TODO load game status from cookie
+	if (game.status == 2) {
+		restartGame();
+	}
+	else if (game.status == 1) {
+		startGame();
 	}
 	else {
-		restartGame();
+		$('#login-window').show();
 	}
 });
 
@@ -153,21 +157,25 @@ function event(type, data) {
 
 function startGame() {
 	game.status = 1
+	renderTimer = setInterval('render()', 500)
 }
 
 function restartGame() {
 	// TODO kill & restart render timer
 	game.status = 1
+	renderTimer = setInterval('render()', 500)
 }
 
 function pauseGame() {
 	// TODO send pause request
 	game.status = 2
+	clearInterval(renderTimer)
 }
 
 function stopGame() {
 	// TODO kill render timer
 	game.status = 0
+	clearInterval(renderTimer)
 }
 
 function render() {
