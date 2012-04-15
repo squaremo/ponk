@@ -22,6 +22,16 @@ function handleStart(payload) {
 	// NO-OP server -> client
 }
 
+function flash(msg, kind) {
+  var elem = $('<p/>');
+  if (kind) elem.addClass(kind);
+  elem.text(msg);
+  $('#flash').append(elem);
+  elem.fadeOut(1500, function() {
+    $('#flash').empty();
+  });
+}
+
 function handlePause(payload) {
 	console.log('pause');
 	// NO-OP server -> client, client -> server
@@ -61,6 +71,23 @@ dictionary['stop'] = handleStop;
 dictionary['pos'] = handlePos;
 dictionary['win'] = handleWin;
 dictionary['highscore'] = handleHighscore;
+
+function handleSledge(txt) {
+  flash(txt, 'sledge');
+}
+
+// ooh, get you.
+var handlers = {
+  'register' : handleRegister,
+  'start': handleStart,
+  'pause': handlePause,
+  'restart': handleRestart,
+  'stop': handleStop,
+  'pos': handlePos,
+  'win': handleWin,
+  'highscore': handleHighscore,
+  'sledge': handleSledge
+};
 
 // 2 secs to cover 640x480 at 10f/s
 var game = new State();
@@ -207,3 +234,11 @@ function drawBall(context, x, y) {
 function log(msg) {
 	$('#log-window').append('<p>' + msg + '</p>');
 }
+
+// Sledging
+
+$('#sledge').submit(function() {
+  var txt = $('#insult').val();
+  sock.send(event('sledge', txt));
+  return false;
+});

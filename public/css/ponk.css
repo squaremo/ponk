@@ -32,5 +32,11 @@ div#flash p {
     position: absolute;
     z-index: 1;
     font-size: 4em;
+    font-weight: bold;
     color: green;
+    text-align: center;
+}
+
+div#flash p.sledge {
+    color: red;
 }
