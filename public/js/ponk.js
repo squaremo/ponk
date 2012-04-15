@@ -43,10 +43,34 @@ State.prototype.tick = function() {
   ball.x += ball.vx;
   ball.y += ball.vy;
 
-  var h_width = canvas.width / 2;
+  var edge_w = (canvas.width / 2) - ball.r;
+  var edge_h = (canvas.height / 2) - ball.r;
+
+  if ((ball.x > edge_w) || (ball.x < -edge_w)) {
+    ball.vx = -ball.vx;
+  }
+  if ((ball.y < -edge_h) || (ball.y > edge_h)) {
+    ball.vy = -ball.vy;
+  }
+
+  return;
+
+  var ball_edge_r = [ball.x + ball.r, ball.y]; // coord of RHS point
+  var ball_edge_l = [ball.x - ball.r, ball.y]; // coord of LHS point
+
   var edge_r = this.player.w + this.player.x;
   var edge_l = this.opponent.w + this.opponent.x;
-  if ((ball.x < (edge_l - h_width)) || (ball.x > (h_width - edge_r))) {
+
+  var h_width = canvas.width / 2;
+
+  if (ball_edge_l[0] <= (edge_l - h_width)) {
+    //
+  }
+  else if (ball_edge_r[0] >= (h_width - edge_r)) {
+    //
+    if (true) {
+	  //
+    }
     debug("Stopping");
 	ball.stop();
 	// test for paddle
@@ -401,7 +425,7 @@ function displayCountdown(count) {
 	var x = 200;
 	var y = 200;
 	var w = 400;
-	var text = "Game starts in " + count;
+	var text = "<h1>Game starts in " + count + "</h1>";
 	var context = game.canvas.getContext('2d');
 	context.fillText(text, x, y, w);
 	if (count > 0) {
@@ -413,8 +437,7 @@ function displayCountdown(count) {
 }
 
 function renderClear(context) {
-	context.fillStyle = '#ffffff';
-	context.fillRect(0, 0, 640, 400);
+	context.clearRect(0, 0, 640, 400);
 }
 
 function renderPaddle(context, color, offset, y, h) {
