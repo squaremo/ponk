@@ -19,26 +19,7 @@ function handleRegister(payload) {
 
 function handleStart(payload) {
 	console.log('start');
-
-	// temp testing, for renderer
-	$('#game-window').show();
-        // TODO show opponent
-	initGame();
-	render();
-
-        flash("Game on!");
-
 	// NO-OP server -> client
-}
-
-function flash(msg, kind) {
-  var elem = $('<p/>');
-  if (kind) elem.addClass(kind);
-  elem.text(msg);
-  $('#flash').append(elem);
-  elem.fadeOut(function() {
-    $('#flash').empty();
-  });
 }
 
 function handlePause(payload) {
@@ -71,28 +52,17 @@ function handleHighscore(payload) {
 	// NO-OP server -> client
 }
 
-function handleSledge(txt) {
-  flash(txt);
-}
+var dictionary = [];
+dictionary['register'] = handleRegister;
+dictionary['start'] = handleStart;
+dictionary['pause'] = handlePause;
+dictionary['restart'] = handleRestart;
+dictionary['stop'] = handleStop;
+dictionary['pos'] = handlePos;
+dictionary['win'] = handleWin;
+dictionary['highscore'] = handleHighscore;
 
-var handlers = {
-  'register' : handleRegister,
-  'start': handleStart,
-  'pause': handlePause,
-  'restart': handleRestart,
-  'stop': handleStop,
-  'pos': handlePos,
-  'win': handleWin,
-  'highscore': handleHighscore
-};
-
-function die(event) {
-  console.log({aaaaieeee: event});
-  // Oh and maybe tell the user etc.
-}
-
-// 2 secs to cover 640x480 at 10f/s. So, to an approximation,
-// |velocity| should translate to 640 / 20 = 32.
+// 2 secs to cover 640x480 at 10f/s
 var game = new State();
 
 var scoreboard = [];
@@ -110,7 +80,7 @@ sock.onmessage = function(e) {
 	console.log('message', e.data);
 	log("Received message... " + e.data);
 	var json = JSON.parse(e.data);
-        var func = handlers[json.event] || die;
+	var func = dictionary[json['event']];
 	func(json.data);
 };
 
@@ -136,6 +106,10 @@ $(document).ready( function() {
 	}
 });
 
+$('#signin-button').click( function() {
+	$('#signin').submit();
+});
+
 $('#signin').submit( function() {
 	var username = $("input#username").val();
 	if (username == null || username == '') {
@@ -146,8 +120,13 @@ $('#signin').submit( function() {
 	$('#login-window').hide();
 	$('#log-window').show();
 
-	log("Waiting for match ...");
+	log("Sending username...");
         sock.send(event('register', username));
+
+	// temp testing, for renderer
+	$('#game-window').show();
+	initGame();
+	render();
 
 	return false;
 });
@@ -207,14 +186,20 @@ function render() {
 	context.fillRect(remoteX, remoteY, paddleWidth, remoteH);
 
 	context.fillStyle = '#333333';
-	context.beginPath();
 
 	// ontext.arc(x, y, r, n, Math.PI*2, true);
 	var ballX = canvas.width/2;
 	var ballY = canvas.height/2;
+	drawBall(context, ballX, ballY);
+}
+
+function drawBall(context, x, y) {
 	var radius = 10;
-	var other = 0;
-	context.arc(ballX, ballY, radius, other, Math.PI*2, true);
+	var startAngle = 0;
+	var endAngle = Math.PI*2;
+	var antiClockwise = true;
+	context.beginPath();
+	context.arc(x, y, radius, startAngle, endAngle, antiClockwise);
 	context.closePath();
 	context.fill();
 }
@@ -222,11 +207,3 @@ function render() {
 function log(msg) {
 	$('#log-window').append('<p>' + msg + '</p>');
 }
-
-
-// Sledging
-
-$('#sledge').submit(function() {
-  var txt = $('#insult').val();
-  sock.send(event('sledge', txt));
-});
