@@ -332,8 +332,6 @@ function render() {
     game.tick();
     if (game.player.dirty) sock.send(event('pos', game.player.y));
     game.player.dirty = false;
-	// TODO find localPlayer
-	// 3var canvas = document.getElementById('game-field'); // jquery didn't find this
 
 	var context = game.canvas.getContext('2d');
 
@@ -343,13 +341,13 @@ function render() {
 	// calculate offsets
 	var offset1 = 10;
 	var offset2 = game.canvas.width - (offset1 * 2);
-
 	var y1 = ((game.canvas.height - game.opponent.h) / 2) + game.opponent.y;
 	var y2 = ((game.canvas.height - game.player.h) / 2) + game.player.y;
 
 	renderPaddle(context, '#cc9999', offset1, y1, game.opponent.h);
 	renderPaddle(context, '#9999cc', offset2, y2, game.player.h);
 	renderBall(context);
+	debug("game: " + game);
 }
 
 function renderCountdown(context) {
@@ -398,7 +396,9 @@ function fireBall() {
 }
 
 function log(msg) {
-  $('#log-window').append($('<p/>').text(msg));
+    var div = $('#log-window');
+    div.append($('<p/>').text(msg));
+    div.scrollTop(div.scrollTop() + 10000);
 }
 
 function debug(msg) {
