@@ -36,7 +36,7 @@ function flash(msg, kind) {
   if (kind) elem.addClass(kind);
   elem.text(msg);
   $('#flash').append(elem);
-  elem.fadeOut(function() {
+  elem.fadeOut(1500, function() {
     $('#flash').empty();
   });
 }
@@ -72,7 +72,7 @@ function handleHighscore(payload) {
 }
 
 function handleSledge(txt) {
-  flash(txt);
+  flash(txt, 'sledge');
 }
 
 var handlers = {
@@ -83,7 +83,8 @@ var handlers = {
   'stop': handleStop,
   'pos': handlePos,
   'win': handleWin,
-  'highscore': handleHighscore
+  'highscore': handleHighscore,
+  'sledge': handleSledge
 };
 
 function die(event) {
@@ -229,4 +230,5 @@ function log(msg) {
 $('#sledge').submit(function() {
   var txt = $('#insult').val();
   sock.send(event('sledge', txt));
+  return false;
 });
