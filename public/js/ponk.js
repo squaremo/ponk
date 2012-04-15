@@ -10,8 +10,8 @@ function Game() {
 }
 
 function State() {
-	this.p1 = new Player();
-	this.p2 = new Player();
+	this.opponent = new Player();
+	this.player = new Player();
 	this.ball = new Ball();
 	this.canvas = null;
 }
@@ -32,6 +32,31 @@ function Ball() {
 	this.vy = 0;
 }
 
+MAXY = 400;
+MAXX = 620;
+
+State.prototype.tick = function() {
+  var ball = this.ball;
+  ball.x += ball.vx;
+  ball.y += ball.vy;
+  if (ball.y < 0) {
+    var xintercept = ball.x - (Math.floor(ball.y / ball.vy)) * ball.vx;
+    // FIXME in general we want the whole distance the ball traveled to be
+    // consistent
+    ball.x = xintercept;
+    ball.y = 0;
+    ball.vy = -ball.vy;
+  }
+  else if (ball.y > MAXY) {
+    var xintercept = ball.x - (Math.floor((MAXY - ball.y) / ball.vy)) * ball.vx;
+    // FIXME in general we want the whole distance the ball traveled to be
+    // consistent
+    ball.x = xintercept;
+    ball.y = MAXY;
+    ball.vy = -ball.vy;
+  }
+}
+
 Player.prototype.move = function(delta) {
 	// TODO smarter derek collision detection
 
@@ -40,6 +65,7 @@ Player.prototype.move = function(delta) {
 	// the gap to the edge, when approaching the edge
 
 	// log("position " + this.y + " delta: " + delta);
+        this.dirty = true;
 	var y_min = 0 - 160;
 	var y_max = 160;
 	var y_new = this.y + delta;
@@ -52,6 +78,27 @@ Ball.prototype.bounce = function() {
 	//
 }
 
+
+function handleStart(payload) {
+  console.log('start');
+
+  game.opponent.name = payload.name;
+  $('#game-title').empty();
+  $('#game-title')
+    .append(
+      $('<span/>').addClass('remotePlayer').text(game.opponent.name))
+    .append(' vs ')
+    .append(
+      $('<span/>').addClass('localPlayer').text(game.player.name));
+
+  // temp testing, for renderer
+  $('#game-window').show();
+  // TODO show opponent
+  initGame();
+  startGame();
+
+  flash("Game on!");
+}
 
 // NB you can write text into the canvas
 function flash(msg, kind) {
@@ -72,8 +119,8 @@ function handleRegister(payload) {
 function handleStart(payload) {
 	debug('start');
 	// NO-OP server -> client
-	game.p2.name = payload.name;
-	game.p2.h = payload.height;
+	game.opponent.name = payload.name;
+	game.opponent.h = payload.height;
 	startGame();
 }
 
@@ -99,7 +146,7 @@ function handlePos(payload) {
 		log("received NaN: " + payload);
 	}
 	else {
-		game.p2.move(payload);
+		game.opponent.move(payload);
 	}
 }
 
@@ -112,16 +159,6 @@ function handleHighscore(payload) {
 	debug('highscore');
 	// NO-OP server -> client
 }
-
-// var dictionary = [];
-// dictionary['register'] = handleRegister;
-// dictionary['start'] = handleStart;
-// dictionary['pause'] = handlePause;
-// dictionary['restart'] = handleRestart;
-// dictionary['stop'] = handleStop;
-// dictionary['pos'] = handlePos;
-// dictionary['win'] = handleWin;
-// dictionary['highscore'] = handleHighscore;
 
 function handleSledge(txt) {
   flash(txt, 'sledge');
@@ -140,7 +177,14 @@ var handlers = {
   'sledge': handleSledge
 };
 
-// 2 secs to cover 640x480 at 10f/s
+function die(event) {
+  console.log({aaaaieeee: event});
+  // Oh and maybe tell the user etc.
+}
+
+// 2 secs to cover 640x480 at 10f/s. So, to an approximation,
+// |velocity| should translate to 640 / 20 = 32.
+
 var game = new State();
 var sock = new SockJS('/socks');
 
@@ -157,7 +201,7 @@ sock.onmessage = function(e) {
 	console.log('message', e.data);
 	log("Received message... " + e.data);
 	var json = JSON.parse(e.data);
-	var func = handlers[json['event']];
+	var func = handlers[json.event];
 	func(json.data);
 };
 
@@ -187,10 +231,6 @@ $(document).unload( function() {
 	stopGame();
 });
 
-$('#signin-button').click( function() {
-	$('#signin').submit();
-});
-
 $('#signin').submit( function() {
 	var username = $("input#username").val();
 	if (username == null || username == '') {
@@ -201,8 +241,9 @@ $('#signin').submit( function() {
 	$('#login-window').hide();
 	$('#log-window').show();
 
-	log("Sending username...");
 	initGame(username);
+	startGame();
+
 	return false;
 });
 
@@ -213,8 +254,8 @@ function event(type, data) {
 function initGame(username) {
 	log("Initialising game...");
 	game.canvas = document.getElementById('game-field'); // jquery didn't find this
-	game.p1.name = username;
-	game.p2.name = 'unknown';
+	game.player.name = username;
+	game.opponent.name = 'unknown';
     sock.send(event('register', username));
 
 	// temp testing, for renderer
@@ -224,27 +265,26 @@ function initGame(username) {
 
 function startGame() {
   game.status = 1;
-  renderTimer = setInterval('render()', FRAME_RATE);
+  renderTimer = setInterval(render, FRAME_RATE);
   $(document).keypress( function(event) {
 	debug("key: " + event.which);
 	switch (event.which) {
-		case KEYBOARD_Q:
-			game.p1.move(0 - 30);
-			break;
-		case KEYBOARD_A:
-			game.p1.move(30);
-			break;
+		// case KEYBOARD_Q:
+		//  game.opponent.move(0 - 30);
+		//  break;
+		// case KEYBOARD_A:
+		//  game.opponent.move(30);
+		//  break;
 		case KEYBOARD_P:
-			game.p2.move(0 - 30);
+			game.player.move(0 - 30);
 			break;
 		case KEYBOARD_L:
-			game.p2.move(30);
+			game.player.move(30);
 			break;
 	}
   });
   // <span id="localUserName">$localUser</span> vs <span id="remoteUserName">$remoteUser</span>
-
-  $('#game-title').append('<span id="localUserName">' + game.p1.name + '</span> vs <span id="remoteUserName">' + game.p2.name + '</span>');
+  $('#game-title').append('<span id="localUserName">' + game.player.name + '</span> vs <span id="remoteUserName">' + game.opponent.name + '</span>');
   $('#game-window').show();
   var context = game.canvas.getContext('2d');
   renderCountdown(context);
@@ -255,7 +295,7 @@ function startGame() {
 function restartGame() {
   // TODO kill & restart render timer
   game.status = 1;
-  renderTimer = setInterval('render()', FRAME_RATE);
+  renderTimer = setInterval(render, FRAME_RATE);
 }
 
 function pauseGame() {
@@ -271,8 +311,22 @@ function stopGame() {
   // TODO stop key listener
 }
 
+
+function initGame(playerName) {
+  game = new State();
+  game.player.name = playerName;
+  log("Initialising game...");
+  game.canvas = document.getElementById('game-field'); // jquery didn't find this
+}
+
 // field is 400 high & 600 wide
 function render() {
+    game.tick();
+    if (game.player.dirty) sock.send(event('pos', game.player.y));
+    game.player.dirty = false;
+	// TODO find localPlayer
+	// 3var canvas = document.getElementById('game-field'); // jquery didn't find this
+
 	var context = game.canvas.getContext('2d');
 
 	// blank it out
@@ -282,12 +336,13 @@ function render() {
 	var offset1 = 10;
 	var offset2 = game.canvas.width - (offset1 * 2);
 
-	var y1 = ((game.canvas.height - game.p1.h) / 2) + game.p1.y;
-	var y2 = ((game.canvas.height - game.p2.h) / 2) + game.p2.y;
+	var y1 = ((game.canvas.height - game.opponent.h) / 2) + game.opponent.y;
+	var y2 = ((game.canvas.height - game.player.h) / 2) + game.player.y;
 
-	renderPaddle(context, '#cc9999', offset1, y1, game.p1.h);
-	renderPaddle(context, '#9999cc', offset2, y2, game.p2.h);
+	renderPaddle(context, '#cc9999', offset1, y1, game.opponent.h);
+	renderPaddle(context, '#9999cc', offset2, y2, game.player.h);
 	renderBall(context);
+
 }
 
 function renderCountdown(context) {
@@ -333,7 +388,7 @@ function fireBall() {
 }
 
 function log(msg) {
-	$('#log-window').append('<p>' + msg + '</p>');
+  $('#log-window').append($('<p/>').text(msg));
 }
 
 function debug(msg) {

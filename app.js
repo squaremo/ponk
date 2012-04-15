@@ -109,4 +109,6 @@ function gameOn(player1, player2) {
 }
 
 // Fight!
-server.listen(process.env['VCAP_APP_PORT'] || 3000);
+var port = process.env.VCAP_APP_PORT || 3000;
+console.log(' [*] Listening on 0.0.0.0:' + port);
+server.listen(port);
