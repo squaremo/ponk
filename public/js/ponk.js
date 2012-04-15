@@ -37,8 +37,12 @@ MAXX = 620;
 
 State.prototype.tick = function() {
   var ball = this.ball;
+  var canvas = this.canvas;
   ball.x += ball.vx;
   ball.y += ball.vy;
+  if ((ball.x < 0) || (ball.x > canvas.width)) {
+	stopGame();
+  }
   if (ball.y < 0) {
     var xintercept = ball.x - (Math.floor(ball.y / ball.vy)) * ball.vx;
     // FIXME in general we want the whole distance the ball traveled to be
@@ -47,7 +51,7 @@ State.prototype.tick = function() {
     ball.y = 0;
     ball.vy = -ball.vy;
   }
-  else if (ball.y > MAXY) {
+  else if (ball.y > (MAXY / 2)) {
     var xintercept = ball.x - (Math.floor((MAXY - ball.y) / ball.vy)) * ball.vx;
     // FIXME in general we want the whole distance the ball traveled to be
     // consistent
@@ -55,6 +59,7 @@ State.prototype.tick = function() {
     ball.y = MAXY;
     ball.vy = -ball.vy;
   }
+  debug("ball.xy(" + ball.x + "," + ball.y + ")");
 }
 
 Player.prototype.move = function(delta) {
@@ -76,6 +81,11 @@ Player.prototype.move = function(delta) {
 
 Ball.prototype.bounce = function() {
 	//
+}
+
+Ball.prototype.fire = function() {
+	game.ball.vx = 12;
+	game.ball.vy = 3;
 }
 
 
@@ -265,7 +275,6 @@ function initGame(username) {
 
 function startGame() {
   game.status = 1;
-  renderTimer = setInterval(render, FRAME_RATE);
   $(document).keypress( function(event) {
 	debug("key: " + event.which);
 	switch (event.which) {
@@ -288,8 +297,7 @@ function startGame() {
   $('#game-window').show();
   var context = game.canvas.getContext('2d');
   renderCountdown(context);
-  // start ball
-  fireBall();
+  renderTimer = setInterval(render, FRAME_RATE);
 }
 
 function restartGame() {
@@ -342,7 +350,6 @@ function render() {
 	renderPaddle(context, '#cc9999', offset1, y1, game.opponent.h);
 	renderPaddle(context, '#9999cc', offset2, y2, game.player.h);
 	renderBall(context);
-
 }
 
 function renderCountdown(context) {
@@ -354,12 +361,15 @@ function renderCountdown(context) {
 function displayCountdown(count) {
 	var x = 200;
 	var y = 200;
-	var w = 200;
+	var w = 400;
 	var text = "Game starts in " + count;
 	var context = game.canvas.getContext('2d');
 	context.fillText(text, x, y, w);
 	if (count > 0) {
 		setTimeout("displayCountdown(" + (count - 1) + ")", 1000);
+	}
+	else {
+		setTimeout("game.ball.fire()", 1000);
 	}
 }
 
