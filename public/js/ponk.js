@@ -11,6 +11,7 @@ function Game() {
 }
 
 function State() {
+	this.status = 0;
 	this.opponent = new Player();
 	this.player = new Player();
 	this.ball = new Ball();
@@ -44,7 +45,7 @@ State.prototype.tick = function() {
   ball.x += ball.vx;
   ball.y += ball.vy;
 
-  alert("ball: " + ball.x + "," + ball.y);
+  // alert("ball: " + ball.x + "," + ball.y);
 
   var player_yt = this.player.y;
   var player_yb = this.player.y + this.player.h;
@@ -55,16 +56,16 @@ State.prototype.tick = function() {
   if ((ball.y > player_yt) &&
       (ball.y < player_yb)) {
 	// RHS bouncer
-	stopGame();
+	// stopGame();
 	ball.vx = -ball.vx;
   }
   else if (ball_rhs_edge >= canvas.width) {
 	// RHS loser
-	stopGame('player');
+	// stopGame('player');
   }
   else if (ball_lhs_edge <= 0) {
 	// LHS loser
-	stopGame('opponent');
+	// stopGame('opponent');
   }
 
   var ball_top_edge = ball.y - ball.r;
@@ -83,9 +84,8 @@ State.prototype.tick = function() {
 Player.prototype.move = function(delta) {
     this.dirty = true;
 
-	var range = game.canvas.height / 2;
-	var y_min = 0 - range;
-	var y_max = range;
+	var y_min = 0;
+	var y_max = game.canvas.height - this.h;
 	var y_new = this.y + delta;
 	if (y_new < y_min) {
 		this.y = y_min;
@@ -121,6 +121,8 @@ Ball.prototype.fire = function() {
 	// TODO generate random angle and start side
 	var vx = 12;
 	var vy = 3;
+	game.ball.x = 30;
+	game.ball.y = game.canvas.height / 2;
 	game.ball.vx = vx;
 	game.ball.vy = vy;
 }
@@ -237,7 +239,7 @@ sock.onmessage = function(e) {
 };
 
 sock.onclose = function() {
-	console.log('close');
+	// console.log('close');
 	stopGame();
 };
 
@@ -327,6 +329,11 @@ function startGame() {
   renderTimer = setInterval(render, FRAME_RATE);
 }
 
+function launchGame() {
+  game.status = 1;
+  game.ball.fire();
+}
+
 function restartGame() {
   // TODO kill & restart render timer
   game.status = 1;
@@ -334,14 +341,16 @@ function restartGame() {
 }
 
 function pauseGame() {
-	// TODO send pause request
-  game.status = 2;
+  // TODO send pause request
+  // game.status = 2;
+  console.log("pausing game, clearing " + renderTimer);
   clearInterval(renderTimer);
 }
 
 function stopGame() {
   // TODO kill render timer
   game.status = 0;
+  console.log("stopping game, clearing " + renderTimer);
   clearInterval(renderTimer);
   // TODO stop key listener
 }
@@ -349,6 +358,7 @@ function stopGame() {
 // field is 400 high & 600 wide
 function render() {
     game.tick();
+
     if (game.player.dirty) sock.send(event('pos', game.player.y));
     game.player.dirty = false;
 
@@ -358,15 +368,16 @@ function render() {
 	renderClear(context);
 
 	// calculate offsets
-	var offset1 = 10;
-	var offset2 = game.canvas.width - (offset1 * 2);
-	var y1 = ((game.canvas.height - game.opponent.h) / 2) + game.opponent.y;
-	var y2 = ((game.canvas.height - game.player.h) / 2) + game.player.y;
+	// var offset1 = 10;
+	// var offset2 = game.canvas.width - (offset1 * 2);
+	// var y1 = ((game.canvas.height - game.opponent.h) / 2) + game.opponent.y;
+	// var y2 = ((game.canvas.height - game.player.h) / 2) + game.player.y;
 
-	renderPaddle(context, '#cc9999', game.opponent.x, y1, game.opponent.h);
-	renderPaddle(context, '#9999cc', game.player.x, y2, game.player.h);
-	renderBall(context);
-	// debug("game: " + JSON.stringify(game));
+	if (game.status != 0) {
+		renderPaddle(context, '#cc9999', game.opponent.x, game.opponent.y, game.opponent.h);
+		renderPaddle(context, '#9999cc', game.player.x, game.player.y, game.player.h);
+        renderBall(context);
+    }
 }
 
 function renderCountdown(context) {
@@ -376,17 +387,20 @@ function renderCountdown(context) {
 }
 
 function displayCountdown(count) {
-	var x = 200;
-	var y = 200;
-	var w = 400;
-	var text = "<h1>Game starts in " + count + "</h1>";
-	var context = game.canvas.getContext('2d');
-	context.fillText(text, x, y, w);
 	if (count > 0) {
-		setTimeout("displayCountdown(" + (count - 1) + ")", 1000);
+		var text = "Game starts in " + count;
+		var context = game.canvas.getContext('2d');
+		var x = 200;
+		var y = 200;
+		var w = 400;
+		renderClear(context);
+		context.font = "20pt Arial";
+		context.fillText(text, x, y, w);
+		count--;
+		setTimeout("displayCountdown(" + count + ")", 1000);
 	}
 	else {
-		setTimeout("game.ball.fire()", 1000);
+		setTimeout("launchGame()", 1000);
 	}
 }
 
@@ -407,10 +421,6 @@ function renderBall(context) {
 	context.arc(game.ball.x, game.ball.y, game.ball.r, 0, (Math.PI * 2), true);
 	context.closePath();
 	context.fill();
-}
-
-function fireBall() {
-	//
 }
 
 function log(msg) {
