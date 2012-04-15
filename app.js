@@ -78,6 +78,7 @@ function playing_f(opponent) {
     case 'pos':
     case 'win':
     case 'move':
+    case 'sledge':
       opponent.event(event.event, event.data);
       break;
     default:

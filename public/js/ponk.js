@@ -31,8 +31,14 @@ function handleStart(payload) {
 	// NO-OP server -> client
 }
 
-function flash(msg) {
-  $('#log-window').append($('<p/>').text(msg));
+function flash(msg, kind) {
+  var elem = $('<p/>');
+  if (kind) elem.addClass(kind);
+  elem.text(msg);
+  $('#flash').append(elem);
+  elem.fadeOut(function() {
+    $('#flash').empty();
+  });
 }
 
 function handlePause(payload) {
@@ -63,6 +69,10 @@ function handleWin(payload) {
 function handleHighscore(payload) {
 	console.log('highscore');
 	// NO-OP server -> client
+}
+
+function handleSledge(txt) {
+  flash(txt);
 }
 
 var handlers = {
@@ -212,3 +222,11 @@ function render() {
 function log(msg) {
 	$('#log-window').append('<p>' + msg + '</p>');
 }
+
+
+// Sledging
+
+$('#sledge').submit(function() {
+  var txt = $('#insult').val();
+  sock.send(event('sledge', txt));
+});

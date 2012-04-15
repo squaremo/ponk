@@ -53,7 +53,7 @@
     </div>
 
     <div class="container">
-
+      
       <!-- Example row of columns -->
       <div class="row">
         <div class="span2">
@@ -62,7 +62,7 @@
 		</div>
         <div class="span8">
           <div id="login-window">
-			<h2>Start a new game...</h2>
+            <h2>Start a new game...</h2>
             <form id="signin" method="get" action="#">
 				<p>
 					<label for="username">Select a username:</label>
@@ -73,7 +73,10 @@
 				</p>
 			</form>
           </div>
-          <div id="game-window"><canvas id="game-field" width="620" height="400">Your browser is too crap to play this game</canvas></div>
+          <div id="game-window">
+            <div id="flash"></div>
+            <canvas id="game-field" width="620" height="400">Your browser is too crap to play this game</canvas>
+          </div>
           <div id="log-window"></div>
           <p>
             &nbsp;
@@ -85,7 +88,18 @@
           <p>...</p>
           <p>High Scores</p>
           <p>...</p>
-       </div>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="span10">
+          <form name="sledge" id="sledge">
+            <input type="text" id="insult" name="insult" placeholder="Vous avez un gross nez"/>
+            <input type="submit" value="Fling"/>
+          </form>
+        </div>
+        <div class="span2">
+        </div>
       </div>
 
       <hr>

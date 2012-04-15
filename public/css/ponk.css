@@ -28,3 +28,9 @@ div#game-window {
 canvas#game-field {
 }
 
+div#flash p {
+    position: absolute;
+    z-index: 1;
+    font-size: 4em;
+    color: green;
+}
