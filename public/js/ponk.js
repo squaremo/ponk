@@ -1,3 +1,4 @@
+var FRAME_RATE = 25;
 
 function State() {
 	this.p1y = 0;
@@ -171,14 +172,17 @@ function event(type, data) {
 
 function startGame() {
   game.status = 1;
-  renderTimer = setInterval('render()', 50);
+  renderTimer = setInterval('render()', FRAME_RATE);
   $(document).keypress( function(event) {
     var distance = (400 - game.p1paddleHeight) / 2;
+	// this calc needs to be finer, and account for movement
+	// increments that are smaller than the size of the increment
+	// when approaching the edge
 	if ((event.which == 111) && (game.p1y > (0 - distance))) {
-      game.p1y = game.p1y - 20; // up
+      game.p1y = game.p1y - 30; // up
     }
 	else if (event.which == 108 && (game.p1y < distance)) {
-      game.p1y = game.p1y + 20; // down
+      game.p1y = game.p1y + 30; // down
 	}
 	// sock.send(event('pos', game.p1y));
   });
@@ -187,7 +191,7 @@ function startGame() {
 function restartGame() {
   // TODO kill & restart render timer
   game.status = 1;
-  renderTimer = setInterval('render()', 50);
+  renderTimer = setInterval('render()', FRAME_RATE);
 }
 
 function pauseGame() {
