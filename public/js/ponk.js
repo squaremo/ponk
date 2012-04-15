@@ -27,15 +27,12 @@ function Player() {
 }
 
 function Ball() {
-	this.x = 0;
-	this.y = 0;
+	this.x = 300;
+	this.y = 200;
 	this.r = 10; // radius
 	this.vx = 0;
 	this.vy = 0;
 }
-
-MAXY = 400;
-MAXX = 620;
 
 State.prototype.tick = function() {
   // TODO smarter derek collision detection
@@ -45,33 +42,30 @@ State.prototype.tick = function() {
   ball.x += ball.vx;
   ball.y += ball.vy;
 
-  // alert("ball: " + ball.x + "," + ball.y);
-
-  var player_yt = this.player.y;
-  var player_yb = this.player.y + this.player.h;
-
-  var ball_rhs_edge = ball.x + ball.r;
-  var ball_lhs_edge = ball.x - ball.r;
-
-  if ((ball.y > player_yt) &&
-      (ball.y < player_yb)) {
-	// RHS bouncer
-	// stopGame();
-	ball.vx = -ball.vx;
-  }
-  else if (ball_rhs_edge >= canvas.width) {
-	// RHS loser
-	// stopGame('player');
-  }
-  else if (ball_lhs_edge <= 0) {
-	// LHS loser
-	// stopGame('opponent');
-  }
-
   var ball_top_edge = ball.y - ball.r;
   var ball_bottom_edge = ball.y + ball.r;
   if ((ball_top_edge <= 0) || (ball_bottom_edge >= canvas.height)) {
     ball.vy = -ball.vy;
+  }
+
+  var bre = ball.x + ball.r;
+  var ble = ball.x - ball.r;
+  var lht = game.opponent.y;
+  var lhb = game.opponent.y + game.opponent.h;
+  var rht = game.player.y;
+  var rhb = game.player.y + game.player.h;
+
+  if ((ble < 30) && (ball.y > lht) && (ball.y < lhb)) {
+    ball.vx = -ball.vx;
+  }
+  if ((bre >= (canvas.width - 25)) && (ball.y > rht) && (ball.y < rhb)) {
+    ball.vx = -ball.vx;
+  }
+  if (ble < 0) {
+    gameWinner();
+  }
+  if (bre >= canvas.width) {
+    gameLoser();
   }
 
   $('#debug-ball-pos').empty();
@@ -287,8 +281,10 @@ function initGame(username) {
 	game.canvas = document.getElementById('game-field'); // jquery didn't find this
 	game.player.name = username;
 	game.player.x = game.canvas.width - (10 + game.player.w);
+	game.player.y = (game.canvas.height / 2) - (game.player.h / 2);
 	game.opponent.name = 'unknown';
 	game.opponent.x = 10;
+	game.opponent.y = (game.canvas.height / 2) - (game.opponent.h / 2);
 
 	// temp testing, for renderer
 	// TODO remove when this fires from callback event
@@ -363,22 +359,37 @@ function render() {
     game.player.dirty = false;
 
 	var context = game.canvas.getContext('2d');
-
-	// blank it out
-	renderClear(context);
-
-	// calculate offsets
-	// var offset1 = 10;
-	// var offset2 = game.canvas.width - (offset1 * 2);
-	// var y1 = ((game.canvas.height - game.opponent.h) / 2) + game.opponent.y;
-	// var y2 = ((game.canvas.height - game.player.h) / 2) + game.player.y;
-
 	if (game.status != 0) {
+		// blank it out
+		renderClear(context);
+        renderBall(context);
 		renderPaddle(context, '#cc9999', game.opponent.x, game.opponent.y, game.opponent.h);
 		renderPaddle(context, '#9999cc', game.player.x, game.player.y, game.player.h);
-        renderBall(context);
     }
 }
+
+function gameWinner() {
+	var text = "Winner!"
+    var context = game.canvas.getContext('2d');
+    renderClear(context);
+	context.font = "30pt Arial";
+	context.textAlign = 'center';
+	context.fillStyle = '#009900';
+	context.fillText(text, 200, 0, 600);
+	setTimeout("displayCountdown(3)", 1000);
+}
+function gameLoser() {
+	var text = "Loser!"
+    var context = game.canvas.getContext('2d');
+    renderClear(context);
+	context.font = "30pt Arial";
+	context.textAlign = 'center';
+	context.fillStyle = '#990000';
+	context.fillText(text, 200, 0, 600);
+	setTimeout("displayCountdown(3)", 1000);
+    displayCountdown(3);
+}
+
 
 function renderCountdown(context) {
 	renderClear(context);
@@ -390,17 +401,16 @@ function displayCountdown(count) {
 	if (count > 0) {
 		var text = "Game starts in " + count;
 		var context = game.canvas.getContext('2d');
-		var x = 200;
-		var y = 200;
-		var w = 400;
 		renderClear(context);
 		context.font = "20pt Arial";
-		context.fillText(text, x, y, w);
+		context.textAlign = 'center';
+		context.fillStyle = '#999999';
+		context.fillText(text, 200, 0, 600);
 		count--;
 		setTimeout("displayCountdown(" + count + ")", 1000);
 	}
 	else {
-		setTimeout("launchGame()", 1000);
+		setTimeout("launchGame()", 100);
 	}
 }
 
