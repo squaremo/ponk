@@ -1,4 +1,5 @@
-var FRAME_RATE = 50;
+var FRAME_RATE = 100;
+var KEYBOARD_CR = 13;
 var KEYBOARD_Q = 113;
 var KEYBOARD_A = 97;
 var KEYBOARD_O = 111;
@@ -43,79 +44,48 @@ State.prototype.tick = function() {
   ball.x += ball.vx;
   ball.y += ball.vy;
 
-  var edge_w = (canvas.width / 2) - ball.r;
-  var edge_h = (canvas.height / 2) - ball.r;
+  alert("ball: " + ball.x + "," + ball.y);
 
-  if ((ball.x > edge_w) || (ball.x < -edge_w)) {
-    ball.vx = -ball.vx;
+  var player_yt = this.player.y;
+  var player_yb = this.player.y + this.player.h;
+
+  var ball_rhs_edge = ball.x + ball.r;
+  var ball_lhs_edge = ball.x - ball.r;
+
+  if ((ball.y > player_yt) &&
+      (ball.y < player_yb)) {
+	// RHS bouncer
+	stopGame();
+	ball.vx = -ball.vx;
   }
-  if ((ball.y < -edge_h) || (ball.y > edge_h)) {
+  else if (ball_rhs_edge >= canvas.width) {
+	// RHS loser
+	stopGame('player');
+  }
+  else if (ball_lhs_edge <= 0) {
+	// LHS loser
+	stopGame('opponent');
+  }
+
+  var ball_top_edge = ball.y - ball.r;
+  var ball_bottom_edge = ball.y + ball.r;
+  if ((ball_top_edge <= 0) || (ball_bottom_edge >= canvas.height)) {
     ball.vy = -ball.vy;
   }
 
-  return;
-
-  var ball_edge_r = [ball.x + ball.r, ball.y]; // coord of RHS point
-  var ball_edge_l = [ball.x - ball.r, ball.y]; // coord of LHS point
-
-  var edge_r = this.player.w + this.player.x;
-  var edge_l = this.opponent.w + this.opponent.x;
-
-  var h_width = canvas.width / 2;
-
-  if (ball_edge_l[0] <= (edge_l - h_width)) {
-    //
-  }
-  else if (ball_edge_r[0] >= (h_width - edge_r)) {
-    //
-    if (true) {
-	  //
-    }
-    debug("Stopping");
-	ball.stop();
-	// test for paddle
-	// test for win
-	return;
-  }
-
-  // FIXME in general we want the whole distance the ball traveled to be
-  // consistent
-  var h_half = canvas.height / 2;
-  if (ball.y < -h_half) { // top of page
-    var xintercept = ball.x - (Math.floor(ball.y / ball.vy)) * ball.vx;
-	ball.x = xintercept;
-    ball.vy = -ball.vy;
-  }
-  else if (ball.y > h_half) {
-    var xintercept = ball.x - (Math.floor((h_half - ball.y) / ball.vy)) * ball.vx;
-    ball.x = xintercept;
-    ball.vy = -ball.vy;
-  }
-
-  // if (ball.y < 20) {
-  //   var xintercept = ball.x - (Math.floor(ball.y / ball.vy)) * ball.vx;
-  //   // FIXME in general we want the whole distance the ball traveled to be
-  //   // consistent
-  //   ball.x = xintercept;
-  //   ball.y = 0;
-  //   ball.vy = -ball.vy;
-  // }
-  // else if (ball.y > ((MAXY / 2) - 20)) {
-  //   var xintercept = ball.x - (Math.floor((MAXY - ball.y) / ball.vy)) * ball.vx;
-  //   // FIXME in general we want the whole distance the ball traveled to be
-  //   // consistent
-  //   ball.x = xintercept;
-  //   ball.y = MAXY;
-  //   ball.vy = -ball.vy;
-  // }
-  debug("ball.xy(" + ball.x + "," + ball.y + ")");
+  $('#debug-ball-pos').empty();
+  $('#debug-ball-pos')
+	.append('ball x:').append(game.ball.x)
+	.append(', y:').append(game.ball.y)
+	.append(', r:').append(game.ball.r);
 }
 
 Player.prototype.move = function(delta) {
     this.dirty = true;
 
-	var y_min = 0 - 160;
-	var y_max = 160;
+	var range = game.canvas.height / 2;
+	var y_min = 0 - range;
+	var y_max = range;
 	var y_new = this.y + delta;
 	if (y_new < y_min) {
 		this.y = y_min;
@@ -126,6 +96,17 @@ Player.prototype.move = function(delta) {
 	else {
 		this.y = y_new;
 	}
+
+	$('#debug-player-pos').empty();
+	$('#debug-player-pos')
+		.append('player x:').append(game.player.x)
+		.append(', y:').append(game.player.y)
+		.append(', h:').append(game.player.h);
+	$('#debug-opponent-pos').empty();
+	$('#debug-opponent-pos')
+        .append('opponent x:').append(game.opponent.x)
+		.append(', y:').append(game.opponent.y)
+		.append(', h:').append(game.opponent.h);
 }
 
 Player.prototype.moveUp = function() {
@@ -136,11 +117,8 @@ Player.prototype.moveDown = function() {
 	this.move(this.h);
 }
 
-Ball.prototype.bounce = function() {
-	//
-}
-
 Ball.prototype.fire = function() {
+	// TODO generate random angle and start side
 	var vx = 12;
 	var vy = 3;
 	game.ball.vx = vx;
@@ -150,27 +128,6 @@ Ball.prototype.fire = function() {
 Ball.prototype.stop = function() {
 	game.ball.vx = 0;
 	game.ball.vy = 0;
-}
-
-function handleStart(payload) {
-  console.log('start');
-
-  game.opponent.name = payload.name;
-  $('#game-title').empty();
-  $('#game-title')
-    .append(
-      $('<span/>').addClass('remotePlayer').text(game.opponent.name))
-    .append(' vs ')
-    .append(
-      $('<span/>').addClass('localPlayer').text(game.player.name));
-
-  // temp testing, for renderer
-  $('#game-window').show();
-  // TODO show opponent
-  initGame();
-  startGame();
-
-  flash("Game on!");
 }
 
 // NB you can write text into the canvas
@@ -195,6 +152,7 @@ function handleStart(payload) {
 	game.opponent.name = payload.name;
 	game.opponent.h = payload.height;
 	startGame();
+	flash("Game on!");
 }
 
 function handlePause(payload) {
@@ -315,8 +273,6 @@ $('#signin').submit( function() {
 	$('#log-window').show();
 
 	initGame(username);
-	startGame();
-
 	return false;
 });
 
@@ -328,37 +284,43 @@ function initGame(username) {
 	log("Initialising game...");
 	game.canvas = document.getElementById('game-field'); // jquery didn't find this
 	game.player.name = username;
+	game.player.x = game.canvas.width - (10 + game.player.w);
 	game.opponent.name = 'unknown';
-    sock.send(event('register', username));
+	game.opponent.x = 10;
 
 	// temp testing, for renderer
 	// TODO remove when this fires from callback event
 	startGame();
+
+    // sock.send(event('register', username));
 }
 
 function startGame() {
-  game.status = 1;
+  // game.status = 1;
   $(document).keypress( function(event) {
-	debug("key: " + event.which);
+	// debug("key: " + event.which);
 	switch (event.which) {
-		// case KEYBOARD_Q:
-		//  game.opponent.move(0 - 30);
-		//  break;
-		// case KEYBOARD_A:
-		//  game.opponent.move(30);
-		//  break;
+		case KEYBOARD_Q:
+            game.opponent.moveUp(); break;
+		case KEYBOARD_A:
+            game.opponent.moveDown(); break;
 		case KEYBOARD_P:
-			// game.player.move(0 - game.player.h);
-			game.player.moveUp();
-			break;
+			game.player.moveUp(); break;
 		case KEYBOARD_L:
-			// game.player.move(game.player.h);
-			game.player.moveDown();
-			break;
+			game.player.moveDown(); break;
+		case KEYBOARD_CR:
+			pauseGame(); break;
 	}
   });
-  // <span id="localUserName">$localUser</span> vs <span id="remoteUserName">$remoteUser</span>
-  $('#game-title').append('<span id="localUserName">' + game.player.name + '</span> vs <span id="remoteUserName">' + game.opponent.name + '</span>');
+
+  $('#game-title').empty();
+  $('#game-title')
+    .append('<span id="localUserName">')
+	.append(game.player.name)
+	.append('</span> vs <span id="remoteUserName">')
+	.append(game.opponent.name)
+	.append('</span>');
+
   $('#game-window').show();
   var context = game.canvas.getContext('2d');
   renderCountdown(context);
@@ -384,14 +346,6 @@ function stopGame() {
   // TODO stop key listener
 }
 
-
-function initGame(playerName) {
-  game = new State();
-  game.player.name = playerName;
-  log("Initialising game...");
-  game.canvas = document.getElementById('game-field'); // jquery didn't find this
-}
-
 // field is 400 high & 600 wide
 function render() {
     game.tick();
@@ -409,8 +363,8 @@ function render() {
 	var y1 = ((game.canvas.height - game.opponent.h) / 2) + game.opponent.y;
 	var y2 = ((game.canvas.height - game.player.h) / 2) + game.player.y;
 
-	renderPaddle(context, '#cc9999', offset1, y1, game.opponent.h);
-	renderPaddle(context, '#9999cc', offset2, y2, game.player.h);
+	renderPaddle(context, '#cc9999', game.opponent.x, y1, game.opponent.h);
+	renderPaddle(context, '#9999cc', game.player.x, y2, game.player.h);
 	renderBall(context);
 	// debug("game: " + JSON.stringify(game));
 }
@@ -446,11 +400,11 @@ function renderPaddle(context, color, offset, y, h) {
 }
 
 function renderBall(context) {
-	var x = ((game.canvas.width - game.ball.r) / 2) + game.ball.x;
-	var y = ((game.canvas.height - game.ball.r) / 2) + game.ball.y;
+	// var x = ((game.canvas.width - game.ball.r) / 2) + game.ball.x;
+	// var y = ((game.canvas.height - game.ball.r) / 2) + game.ball.y;
 	context.fillStyle = '#333333';
 	context.beginPath();
-	context.arc(x, y, game.ball.r, 0, (Math.PI * 2), true);
+	context.arc(game.ball.x, game.ball.y, game.ball.r, 0, (Math.PI * 2), true);
 	context.closePath();
 	context.fill();
 }
