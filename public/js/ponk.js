@@ -1,15 +1,28 @@
+var FRAME_RATE = 25;
+var KEYBOARD_Q = 113;
+var KEYBOARD_A = 97;
+var KEYBOARD_O = 111;
+var KEYBOARD_P = 112;
+var KEYBOARD_L = 108;
 
 function State() {
-	this.p1x = 0;
-	this.p1y = 0;
+	this.p1 = new Position();
+	this.p2 = new Position();
 	this.ball = new Ball();
+	this.canvas = null;
+}
+
+function Position() {
+	this.y = 0;
+	this.h = 80;
 }
 
 function Ball() {
 	this.x = 0;
-	this.y = 100;
-        this.vx = 22;
-	this.vy = -22;
+	this.y = 0;
+	this.r = 10; // radius
+	this.vx = 0;
+	this.vy = 0;
 }
 
 MAXY = 400;
@@ -37,6 +50,21 @@ State.prototype.tick = function() {
   }
 }
 
+Position.prototype.move = function(delta) {
+	// TODO smarter derek collision detection
+	// this calc needs to be finer, and account for movement
+	// increments that are smaller than the size of the increment
+	// when approaching the edge
+
+	// log("position " + this.y + " delta: " + delta);
+	var y_min = 0 - 160;
+	var y_max = 160;
+	var y_new = this.y + delta;
+	if ((y_new > y_min) && (y_new < y_max)) {
+		this.y = y_new;
+	}
+}
+
 function handleRegister(payload) {
 	console.log('register');
 	// NO-OP client -> server
@@ -54,6 +82,7 @@ function handleStart(payload) {
         flash("Game on!");
 }
 
+// NB you can write text into the canvas
 function flash(msg, kind) {
   var elem = $('<p/>');
   if (kind) elem.addClass(kind);
@@ -82,6 +111,12 @@ function handleStop(payload) {
 function handlePos(payload) {
 	console.log('pos');
 	// NO-OP server -> client
+	if (isNaN(payload)) {
+		log("received NaN: " + payload);
+	}
+	else {
+		game.p2.move(payload);
+	}
 }
 
 function handleWin(payload) {
@@ -164,6 +199,10 @@ $(document).ready( function() {
 	}
 });
 
+$(document).unload( function() {
+	stopGame();
+});
+
 $('#signin').submit( function() {
 	var username = $("input#username").val();
 	if (username == null || username == '') {
@@ -175,15 +214,15 @@ $('#signin').submit( function() {
 	$('#log-window').show();
 
 	log("Sending username...");
-        sock.send(event('register', username));
+    sock.send(event('register', username));
 
 	// temp testing, for renderer
-	//$('#game-window').show();
-	//render();
+	$('#game-window').show();
+	initGame();
+	startGame();
 
 	return false;
 });
-
 
 function event(type, data) {
   return JSON.stringify({'event': type, 'data': data});
@@ -191,13 +230,30 @@ function event(type, data) {
 
 function startGame() {
   game.status = 1;
-  renderTimer = setInterval(render, msperframe);
+  renderTimer = setInterval(render, FRAME_RATE);
+  $(document).keypress( function(event) {
+	log("key: " + event.which);
+	switch (event.which) {
+		case KEYBOARD_Q:
+			game.p1.move(0 - 30);
+			break;
+		case KEYBOARD_A:
+			game.p1.move(30);
+			break;
+		case KEYBOARD_P:
+			game.p2.move(0 - 30);
+			break;
+		case KEYBOARD_L:
+			game.p2.move(30);
+			break;
+	}
+  });
 }
 
 function restartGame() {
-	// TODO kill & restart render timer
+  // TODO kill & restart render timer
   game.status = 1;
-  renderTimer = setInterval(render, msperframe);
+  renderTimer = setInterval(render, FRAME_RATE);
 }
 
 function pauseGame() {
@@ -207,54 +263,57 @@ function pauseGame() {
 }
 
 function stopGame() {
-	// TODO kill render timer
+  // TODO kill render timer
   game.status = 0;
   clearInterval(renderTimer);
+  // TODO stop key listener
 }
 
 function initGame() {
   game = new State();
+	log("Initialising game...");
+	game.canvas = document.getElementById('game-field'); // jquery didn't find this
 }
 
+// field is 400 high & 600 wide
 function render() {
         game.tick();
 	// TODO find localPlayer
-	var canvas = document.getElementById('game-field'); // jquery didn't find this
-	var context = canvas.getContext('2d');
-	// field is 400 high & 600 wide
-	// context.fillRect(x, y, w, h);
-	var offset = 10;
-	var paddleWidth = 10;
-	var localH = 80;
-	var remoteH = 80;
+	// 3var canvas = document.getElementById('game-field'); // jquery didn't find this
+	var context = game.canvas.getContext('2d');
 
-	var localX = offset;
-	var remoteX = canvas.width - (offset + paddleWidth);
+	// blank it out
+	renderClear(context);
 
-	var localY = canvas.height/2 - (localH/2); // temp, needs further calc
-	var remoteY = canvas.height/2 - (remoteH/2); // temp, needs further calc
+	// calculate offsets
+	var offset1 = 10;
+	var offset2 = game.canvas.width - (offset1 * 2);
 
-	context.fillStyle = '#cc9999';
-	context.fillRect(localX, localY, paddleWidth, localH);
-	context.fillStyle = '#9999cc';
-	context.fillRect(remoteX, remoteY, paddleWidth, remoteH);
+	var y1 = ((game.canvas.height - game.p1.h) / 2) + game.p1.y;
+	var y2 = ((game.canvas.height - game.p2.h) / 2) + game.p2.y;
 
-	context.fillStyle = '#333333';
+	renderPaddle(context, '#cc9999', offset1, y1, game.p1.h);
+	renderPaddle(context, '#9999cc', offset2, y2, game.p2.h);
+	renderBall(context);
 
-	// ontext.arc(x, y, r, n, Math.PI*2, true);
-	var ballX = game.ball.x;
-	var ballY = game.ball.y;
-
-	drawBall(context, ballX, ballY);
 }
 
-function drawBall(context, x, y) {
-	var radius = 10;
-	var startAngle = 0;
-	var endAngle = Math.PI*2;
-	var antiClockwise = true;
+function renderClear(context) {
+	context.fillStyle = '#ffffff';
+	context.fillRect(0, 0, 640, 400);
+}
+
+function renderPaddle(context, color, offset, y, h) {
+	context.fillStyle = color;
+	context.fillRect(offset, y, 10, h)
+}
+
+function renderBall(context) {
+	var x = ((game.canvas.width - game.ball.r) / 2) + game.ball.x;
+	var y = ((game.canvas.height - game.ball.r) / 2) + game.ball.y;
+	context.fillStyle = '#333333';
 	context.beginPath();
-	context.arc(x, y, radius, startAngle, endAngle, antiClockwise);
+	context.arc(x, y, game.ball.r, 0, (Math.PI * 2), true);
 	context.closePath();
 	context.fill();
 }
