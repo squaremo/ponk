@@ -240,7 +240,6 @@ function startGame() {
   game.status = 1;
   renderTimer = setInterval(render, FRAME_RATE);
   $(document).keypress( function(event) {
-	log("key: " + event.which);
 	switch (event.which) {
 		// case KEYBOARD_Q:
 		// 	game.opponent.move(0 - 30);
