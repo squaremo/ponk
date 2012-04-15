@@ -26,6 +26,11 @@ div#log-window {
 	width: 600px;
 	height: 200px;
 	border: 5px solid #ccc;
+        overflow: auto;
+}
+#log-window > p {
+    font-family: monospace;
+    margin: 0;
 }
 div#game-window {
 	display: none;

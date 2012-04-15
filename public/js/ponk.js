@@ -330,7 +330,9 @@ function renderBall(context) {
 }
 
 function log(msg) {
-  $('#log-window').append($('<p/>').text(msg));
+    var div = $('#log-window');
+    div.append($('<p/>').text(msg));
+    div.scrollTop(div.scrollTop() + 10000);
 }
 
 // Sledging
