@@ -57,6 +57,7 @@ Position.prototype.move = function(delta) {
 	// when approaching the edge
 
 	// log("position " + this.y + " delta: " + delta);
+        this.dirty = true;
 	var y_min = 0 - 160;
 	var y_max = 160;
 	var y_new = this.y + delta;
@@ -115,7 +116,7 @@ function handlePos(payload) {
 		log("received NaN: " + payload);
 	}
 	else {
-		game.p2.move(payload);
+	  game.p1.move(payload);
 	}
 }
 
@@ -153,8 +154,6 @@ function die(event) {
 
 // 2 secs to cover 640x480 at 10f/s. So, to an approximation,
 // |velocity| should translate to 640 / 20 = 32.
-var FPS = 10;
-var msperframe = 1000 / 10;
 
 var game = new State();
 
@@ -214,7 +213,7 @@ $('#signin').submit( function() {
 	$('#log-window').show();
 
 	log("Sending username...");
-    sock.send(event('register', username));
+        sock.send(event('register', username));
 
 	// temp testing, for renderer
 	$('#game-window').show();
@@ -234,12 +233,12 @@ function startGame() {
   $(document).keypress( function(event) {
 	log("key: " + event.which);
 	switch (event.which) {
-		case KEYBOARD_Q:
-			game.p1.move(0 - 30);
-			break;
-		case KEYBOARD_A:
-			game.p1.move(30);
-			break;
+		// case KEYBOARD_Q:
+		// 	game.p1.move(0 - 30);
+		// 	break;
+		// case KEYBOARD_A:
+		// 	game.p1.move(30);
+		// 	break;
 		case KEYBOARD_P:
 			game.p2.move(0 - 30);
 			break;
@@ -278,6 +277,8 @@ function initGame() {
 // field is 400 high & 600 wide
 function render() {
         game.tick();
+        if (game.p2.dirty) sock.send(event('pos', game.p2.y));
+        game.p2.dirty = false;
 	// TODO find localPlayer
 	// 3var canvas = document.getElementById('game-field'); // jquery didn't find this
 	var context = game.canvas.getContext('2d');
