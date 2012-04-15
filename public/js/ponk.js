@@ -6,8 +6,8 @@ var KEYBOARD_P = 112;
 var KEYBOARD_L = 108;
 
 function State() {
-	this.p1 = new Position();
-	this.p2 = new Position();
+	this.opponent = new Position();
+	this.player = new Position();
 	this.ball = new Ball();
 	this.canvas = null;
 }
@@ -72,15 +72,24 @@ function handleRegister(payload) {
 }
 
 function handleStart(payload) {
-	console.log('start');
+  console.log('start');
 
-	// temp testing, for renderer
-	$('#game-window').show();
-        // TODO show opponent
-	initGame();
-        startGame();
+  game.opponent.name = payload.name;
+  $('#versus').empty();
+  $('#versus')
+    .append(
+      $('<span/>').addClass('remotePlayer').text(game.opponent.name))
+    .append(' vs ')
+    .append(
+      $('<span/>').addClass('localPlayer').text(game.player.name));
 
-        flash("Game on!");
+  // temp testing, for renderer
+  $('#game-window').show();
+  // TODO show opponent
+  initGame();
+  startGame();
+  
+  flash("Game on!");
 }
 
 // NB you can write text into the canvas
@@ -116,7 +125,7 @@ function handlePos(payload) {
 		log("received NaN: " + payload);
 	}
 	else {
-	  game.p1.move(payload);
+	  game.opponent.move(payload);
 	}
 }
 
@@ -217,7 +226,7 @@ $('#signin').submit( function() {
 
 	// temp testing, for renderer
 	$('#game-window').show();
-	initGame();
+	initGame(username);
 	startGame();
 
 	return false;
@@ -234,16 +243,16 @@ function startGame() {
 	log("key: " + event.which);
 	switch (event.which) {
 		// case KEYBOARD_Q:
-		// 	game.p1.move(0 - 30);
+		// 	game.opponent.move(0 - 30);
 		// 	break;
 		// case KEYBOARD_A:
-		// 	game.p1.move(30);
+		// 	game.opponent.move(30);
 		// 	break;
 		case KEYBOARD_P:
-			game.p2.move(0 - 30);
+			game.player.move(0 - 30);
 			break;
 		case KEYBOARD_L:
-			game.p2.move(30);
+			game.player.move(30);
 			break;
 	}
   });
@@ -268,17 +277,18 @@ function stopGame() {
   // TODO stop key listener
 }
 
-function initGame() {
+function initGame(playerName) {
   game = new State();
-	log("Initialising game...");
-	game.canvas = document.getElementById('game-field'); // jquery didn't find this
+  game.player.name = playerName;
+  log("Initialising game...");
+  game.canvas = document.getElementById('game-field'); // jquery didn't find this
 }
 
 // field is 400 high & 600 wide
 function render() {
         game.tick();
-        if (game.p2.dirty) sock.send(event('pos', game.p2.y));
-        game.p2.dirty = false;
+        if (game.player.dirty) sock.send(event('pos', game.player.y));
+        game.player.dirty = false;
 	// TODO find localPlayer
 	// 3var canvas = document.getElementById('game-field'); // jquery didn't find this
 	var context = game.canvas.getContext('2d');
@@ -290,11 +300,11 @@ function render() {
 	var offset1 = 10;
 	var offset2 = game.canvas.width - (offset1 * 2);
 
-	var y1 = ((game.canvas.height - game.p1.h) / 2) + game.p1.y;
-	var y2 = ((game.canvas.height - game.p2.h) / 2) + game.p2.y;
+	var y1 = ((game.canvas.height - game.opponent.h) / 2) + game.opponent.y;
+	var y2 = ((game.canvas.height - game.player.h) / 2) + game.player.y;
 
-	renderPaddle(context, '#cc9999', offset1, y1, game.p1.h);
-	renderPaddle(context, '#9999cc', offset2, y2, game.p2.h);
+	renderPaddle(context, '#cc9999', offset1, y1, game.opponent.h);
+	renderPaddle(context, '#9999cc', offset2, y2, game.player.h);
 	renderBall(context);
 
 }
