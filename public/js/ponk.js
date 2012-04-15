@@ -49,11 +49,9 @@ function handleStart(payload) {
 	$('#game-window').show();
         // TODO show opponent
 	initGame();
-  startGame();
+        startGame();
 
         flash("Game on!");
-
-	// NO-OP server -> client
 }
 
 function flash(msg, kind) {
@@ -100,6 +98,7 @@ function handleSledge(txt) {
   flash(txt, 'sledge');
 }
 
+// ooh, get you.
 var handlers = {
   'register' : handleRegister,
   'start': handleStart,
@@ -121,6 +120,7 @@ function die(event) {
 // |velocity| should translate to 640 / 20 = 32.
 var FPS = 10;
 var msperframe = 1000 / 10;
+
 var game = new State();
 
 var scoreboard = [];
@@ -138,7 +138,7 @@ sock.onmessage = function(e) {
 	console.log('message', e.data);
 	log("Received message... " + e.data);
 	var json = JSON.parse(e.data);
-        var func = handlers[json.event] || die;
+	var func = handlers[json.event];
 	func(json.data);
 };
 
@@ -167,15 +167,20 @@ $(document).ready( function() {
 $('#signin').submit( function() {
 	var username = $("input#username").val();
 	if (username == null || username == '') {
-		return false;
+	  return false;
 	}
 
 	// $.cookie("ponk-username", username, { expires: 7 });
 	$('#login-window').hide();
 	$('#log-window').show();
 
-	log("Waiting for match ...");
+	log("Sending username...");
         sock.send(event('register', username));
+
+	// temp testing, for renderer
+	//$('#game-window').show();
+	//render();
+
 	return false;
 });
 
@@ -207,14 +212,12 @@ function stopGame() {
   clearInterval(renderTimer);
 }
 
-var model;
-
 function initGame() {
-  model = new State();
+  game = new State();
 }
 
 function render() {
-        model.tick();
+        game.tick();
 	// TODO find localPlayer
 	var canvas = document.getElementById('game-field'); // jquery didn't find this
 	var context = canvas.getContext('2d');
@@ -237,14 +240,21 @@ function render() {
 	context.fillRect(remoteX, remoteY, paddleWidth, remoteH);
 
 	context.fillStyle = '#333333';
-	context.beginPath();
 
 	// ontext.arc(x, y, r, n, Math.PI*2, true);
-	var ballX = model.ball.x;
-	var ballY = model.ball.y;
+	var ballX = game.ball.x;
+	var ballY = game.ball.y;
+
+	drawBall(context, ballX, ballY);
+}
+
+function drawBall(context, x, y) {
 	var radius = 10;
-	var other = 0;
-	context.arc(ballX, ballY, radius, other, Math.PI*2, true);
+	var startAngle = 0;
+	var endAngle = Math.PI*2;
+	var antiClockwise = true;
+	context.beginPath();
+	context.arc(x, y, radius, startAngle, endAngle, antiClockwise);
 	context.closePath();
 	context.fill();
 }

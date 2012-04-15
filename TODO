@@ -4,3 +4,4 @@
 - recover game state on refresh, via cookie (status, username)
 - geo-matching
 - sound effect on ball bounce
+- paddle height decreases with game rank
