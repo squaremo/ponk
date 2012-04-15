@@ -19,7 +19,20 @@ function handleRegister(payload) {
 
 function handleStart(payload) {
 	console.log('start');
+
+	// temp testing, for renderer
+	$('#game-window').show();
+        // TODO show opponent
+	initGame();
+	render();
+
+        flash("Game on!");
+
 	// NO-OP server -> client
+}
+
+function flash(msg) {
+  $('#log-window').append($('<p/>').text(msg));
 }
 
 function handlePause(payload) {
@@ -52,17 +65,24 @@ function handleHighscore(payload) {
 	// NO-OP server -> client
 }
 
-var dictionary = [];
-dictionary['register'] = handleRegister;
-dictionary['start'] = handleStart;
-dictionary['pause'] = handlePause;
-dictionary['restart'] = handleRestart;
-dictionary['stop'] = handleStop;
-dictionary['pos'] = handlePos;
-dictionary['win'] = handleWin;
-dictionary['highscore'] = handleHighscore;
+var handlers = {
+  'register' : handleRegister,
+  'start': handleStart,
+  'pause': handlePause,
+  'restart': handleRestart,
+  'stop': handleStop,
+  'pos': handlePos,
+  'win': handleWin,
+  'highscore': handleHighscore
+};
 
-// 2 secs to cover 640x480 at 10f/s
+function die(event) {
+  console.log({aaaaieeee: event});
+  // Oh and maybe tell the user etc.
+}
+
+// 2 secs to cover 640x480 at 10f/s. So, to an approximation,
+// |velocity| should translate to 640 / 20 = 32.
 var game = new State();
 
 var scoreboard = [];
@@ -80,7 +100,7 @@ sock.onmessage = function(e) {
 	console.log('message', e.data);
 	log("Received message... " + e.data);
 	var json = JSON.parse(e.data);
-	var func = dictionary[json['event']];
+        var func = handlers[json.event] || die;
 	func(json.data);
 };
 
@@ -106,10 +126,6 @@ $(document).ready( function() {
 	}
 });
 
-$('#signin-button').click( function() {
-	$('#signin').submit();
-});
-
 $('#signin').submit( function() {
 	var username = $("input#username").val();
 	if (username == null || username == '') {
@@ -120,13 +136,8 @@ $('#signin').submit( function() {
 	$('#login-window').hide();
 	$('#log-window').show();
 
-	log("Sending username...");
+	log("Waiting for match ...");
         sock.send(event('register', username));
-
-	// temp testing, for renderer
-	$('#game-window').show();
-	initGame();
-	render();
 
 	return false;
 });
