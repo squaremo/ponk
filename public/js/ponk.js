@@ -1,4 +1,4 @@
-var FRAME_RATE = 25;
+var FRAME_RATE = 50;
 var KEYBOARD_Q = 113;
 var KEYBOARD_A = 97;
 var KEYBOARD_O = 111;
@@ -36,47 +36,80 @@ MAXY = 400;
 MAXX = 620;
 
 State.prototype.tick = function() {
+  // TODO smarter derek collision detection
+
   var ball = this.ball;
   var canvas = this.canvas;
   ball.x += ball.vx;
   ball.y += ball.vy;
-  if ((ball.x < 0) || (ball.x > canvas.width)) {
-	stopGame();
+
+  var h_width = canvas.width / 2;
+  var edge_r = this.player.w + this.player.x;
+  var edge_l = this.opponent.w + this.opponent.x;
+  if ((ball.x < (edge_l - h_width)) || (ball.x > (h_width - edge_r))) {
+    debug("Stopping");
+	ball.stop();
+	// test for paddle
+	// test for win
+	return;
   }
-  if (ball.y < 0) {
+
+  // FIXME in general we want the whole distance the ball traveled to be
+  // consistent
+  var h_half = canvas.height / 2;
+  if (ball.y < -h_half) { // top of page
     var xintercept = ball.x - (Math.floor(ball.y / ball.vy)) * ball.vx;
-    // FIXME in general we want the whole distance the ball traveled to be
-    // consistent
-    ball.x = xintercept;
-    ball.y = 0;
+	ball.x = xintercept;
     ball.vy = -ball.vy;
   }
-  else if (ball.y > (MAXY / 2)) {
-    var xintercept = ball.x - (Math.floor((MAXY - ball.y) / ball.vy)) * ball.vx;
-    // FIXME in general we want the whole distance the ball traveled to be
-    // consistent
+  else if (ball.y > h_half) {
+    var xintercept = ball.x - (Math.floor((h_half - ball.y) / ball.vy)) * ball.vx;
     ball.x = xintercept;
-    ball.y = MAXY;
     ball.vy = -ball.vy;
   }
+
+  // if (ball.y < 20) {
+  //   var xintercept = ball.x - (Math.floor(ball.y / ball.vy)) * ball.vx;
+  //   // FIXME in general we want the whole distance the ball traveled to be
+  //   // consistent
+  //   ball.x = xintercept;
+  //   ball.y = 0;
+  //   ball.vy = -ball.vy;
+  // }
+  // else if (ball.y > ((MAXY / 2) - 20)) {
+  //   var xintercept = ball.x - (Math.floor((MAXY - ball.y) / ball.vy)) * ball.vx;
+  //   // FIXME in general we want the whole distance the ball traveled to be
+  //   // consistent
+  //   ball.x = xintercept;
+  //   ball.y = MAXY;
+  //   ball.vy = -ball.vy;
+  // }
   debug("ball.xy(" + ball.x + "," + ball.y + ")");
 }
 
 Player.prototype.move = function(delta) {
-	// TODO smarter derek collision detection
+    this.dirty = true;
 
-	// this calc needs to be finer, and account for movement
-	// increments that are smaller/larger than the size of
-	// the gap to the edge, when approaching the edge
-
-	// log("position " + this.y + " delta: " + delta);
-        this.dirty = true;
 	var y_min = 0 - 160;
 	var y_max = 160;
 	var y_new = this.y + delta;
-	if ((y_new > y_min) && (y_new < y_max)) {
+	if (y_new < y_min) {
+		this.y = y_min;
+	}
+	else if (y_new > y_max) {
+		this.y = y_max;
+	}
+	else {
 		this.y = y_new;
 	}
+}
+
+Player.prototype.moveUp = function() {
+	this.move(0 - this.h);
+}
+
+Player.prototype.moveDown = function() {
+	this.move(this.h);
 }
 
 Ball.prototype.bounce = function() {
@@ -84,10 +117,16 @@ Ball.prototype.bounce = function() {
 }
 
 Ball.prototype.fire = function() {
-	game.ball.vx = 12;
-	game.ball.vy = 3;
+	var vx = 12;
+	var vy = 3;
+	game.ball.vx = vx;
+	game.ball.vy = vy;
 }
 
+Ball.prototype.stop = function() {
+	game.ball.vx = 0;
+	game.ball.vy = 0;
+}
 
 function handleStart(payload) {
   console.log('start');
@@ -285,10 +324,12 @@ function startGame() {
 		//  game.opponent.move(30);
 		//  break;
 		case KEYBOARD_P:
-			game.player.move(0 - 30);
+			// game.player.move(0 - game.player.h);
+			game.player.moveUp();
 			break;
 		case KEYBOARD_L:
-			game.player.move(30);
+			// game.player.move(game.player.h);
+			game.player.moveDown();
 			break;
 	}
   });
@@ -347,7 +388,7 @@ function render() {
 	renderPaddle(context, '#cc9999', offset1, y1, game.opponent.h);
 	renderPaddle(context, '#9999cc', offset2, y2, game.player.h);
 	renderBall(context);
-	debug("game: " + game);
+	// debug("game: " + JSON.stringify(game));
 }
 
 function renderCountdown(context) {
