@@ -1,6 +1,9 @@
 .center {
 	text-align: center;
 }
+#insult {
+	width: 160px;
+}
 #localUserName {
 	color: #cc9999;
 }

@@ -1,16 +1,26 @@
 var FRAME_RATE = 25;
+var KEYBOARD_Q = 113;
+var KEYBOARD_A = 97;
+var KEYBOARD_O = 111;
+var KEYBOARD_P = 112;
+var KEYBOARD_L = 108;
 
 function State() {
-	this.p1y = 0;
-	this.p1paddleHeight = 80;
-	this.p2y = 0;
-	this.p2paddleHeight = 80;
+	this.p1 = new Position();
+	this.p2 = new Position();
 	this.ball = new Ball();
+	this.canvas = null;
+}
+
+function Position() {
+	this.y = 0;
+	this.h = 80;
 }
 
 function Ball() {
 	this.x = 0;
 	this.y = 0;
+	this.r = 10; // radius
 	this.vx = 0;
 	this.vy = 0;
 }
@@ -174,16 +184,37 @@ function startGame() {
   game.status = 1;
   renderTimer = setInterval('render()', FRAME_RATE);
   $(document).keypress( function(event) {
-    var distance = (400 - game.p1paddleHeight) / 2;
+    var distance = (400 - game.p1h) / 2;
 	// this calc needs to be finer, and account for movement
 	// increments that are smaller than the size of the increment
 	// when approaching the edge
-	if ((event.which == 111) && (game.p1y > (0 - distance))) {
-      game.p1y = game.p1y - 30; // up
-    }
-	else if (event.which == 108 && (game.p1y < distance)) {
-      game.p1y = game.p1y + 30; // down
+	log("key: " + event.which);
+	switch (event.which) {
+		case KEYBOARD_Q:
+			game.p1.y = game.p1.y - 30;
+			break;
+		case KEYBOARD_A:
+			game.p1.y = game.p1.y + 30;
+			break;
+		case KEYBOARD_P:
+			game.p2.y = game.p2.y - 30;
+			break;
+		case KEYBOARD_L:
+			game.p2.y = game.p2.y + 30;
+			break;
 	}
+	// if ((event.which == KEYBOARD_Q) && (game.p1y > (0 - distance))) {
+	//       game.p1y = game.p1y - 30; // up
+	//     }
+	// else if (event.which == KEYBOARD_A && (game.p1y < distance)) {
+	//       game.p1y = game.p1y + 30; // down
+	// }
+	// else if ((event.which == KEYBOARD_P) && (game.p2y > (0 - distance))) {
+	//       game.p2y = game.p2y - 30; // up
+	//     }
+	// else if (event.which == KEYBOARD_L && (game.p2y < distance)) {
+	//       game.p2y = game.p2y + 30; // down
+	// }
 	// sock.send(event('pos', game.p1y));
   });
 }
@@ -209,53 +240,47 @@ function stopGame() {
 
 function initGame() {
 	log("Initialising game...");
+	game.canvas = document.getElementById('game-field'); // jquery didn't find this
 }
 
 // field is 400 high & 600 wide
 function render() {
 	// TODO find localPlayer
-	var canvas = document.getElementById('game-field'); // jquery didn't find this
-	var context = canvas.getContext('2d');
+	// 3var canvas = document.getElementById('game-field'); // jquery didn't find this
+	var context = game.canvas.getContext('2d');
 
 	// blank it out
-	context.fillStyle = '#ffffff';
-	context.fillRect(0, 0, 600, 400);
+	renderClear(context);
 
-	// this could move to State
-	var offset = 10;
-	var paddleWidth = 10;
-	var localH = 80;
-	var remoteH = 80;
+	// calculate offsets
+	var offset1 = 10;
+	var offset2 = game.canvas.width - (offset1 * 2);
 
-	var localX = offset;
-	var remoteX = canvas.width - (offset + paddleWidth);
-
-	// use offsets with range 200 : -200
 	// TODO derek collision detection
-	var localY = canvas.height/2 - (localH/2) + game.p1y;
-	var remoteY = canvas.height/2 - (remoteH/2) + game.p2y;
+	var y1 = ((game.canvas.height - game.p1.h) / 2) + game.p1.y;
+	var y2 = ((game.canvas.height - game.p2.h) / 2) + game.p2.y;
 
-	context.fillStyle = '#cc9999';
-	context.fillRect(localX, localY, paddleWidth, localH);
-	context.fillStyle = '#9999cc';
-	context.fillRect(remoteX, remoteY, paddleWidth, remoteH);
-
-	context.fillStyle = '#333333';
-
-	// ontext.arc(x, y, r, n, Math.PI*2, true);
-	var ballX = canvas.width/2 - 5;
-	var ballY = canvas.height/2 - 5;
-	drawBall(context, ballX, ballY);
+	renderPaddle(context, '#cc9999', offset1, y1, game.p1.h);
+	renderPaddle(context, '#9999cc', offset2, y2, game.p2.h);
+	renderBall(context);
 }
 
-function drawBall(context, x, y) {
-	// log("drawing ball at " + new Date().getTime())
-	var radius = 10;
-	var startAngle = 0;
-	var endAngle = Math.PI*2;
-	var antiClockwise = true;
+function renderClear(context) {
+	context.fillStyle = '#ffffff';
+	context.fillRect(0, 0, 640, 400);
+}
+
+function renderPaddle(context, color, offset, y, h) {
+	context.fillStyle = color;
+	context.fillRect(offset, y, 10, h)
+}
+
+function renderBall(context) {
+	var x = ((game.canvas.width - game.ball.r) / 2) + game.ball.x;
+	var y = ((game.canvas.height - game.ball.r) / 2) + game.ball.y;
+	context.fillStyle = '#333333';
 	context.beginPath();
-	context.arc(x, y, radius, startAngle, endAngle, antiClockwise);
+	context.arc(x, y, game.ball.r, 0, (Math.PI * 2), true);
 	context.closePath();
 	context.fill();
 }
