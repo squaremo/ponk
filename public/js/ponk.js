@@ -7,9 +7,34 @@ function State() {
 
 function Ball() {
 	this.x = 0;
-	this.y = 0;
-	this.vx = 0;
-	this.vy = 0;
+	this.y = 100;
+        this.vx = 22;
+	this.vy = -22;
+}
+
+MAXY = 400;
+MAXX = 620;
+
+State.prototype.tick = function() {
+  var ball = this.ball;
+  ball.x += ball.vx;
+  ball.y += ball.vy;
+  if (ball.y < 0) {
+    var xintercept = ball.x - (Math.floor(ball.y / ball.vy)) * ball.vx;
+    // FIXME in general we want the whole distance the ball traveled to be
+    // consistent
+    ball.x = xintercept;
+    ball.y = 0;
+    ball.vy = -ball.vy;
+  }
+  else if (ball.y > MAXY) {
+    var xintercept = ball.x - (Math.floor((MAXY - ball.y) / ball.vy)) * ball.vx;
+    // FIXME in general we want the whole distance the ball traveled to be
+    // consistent
+    ball.x = xintercept;
+    ball.y = MAXY;
+    ball.vy = -ball.vy;
+  }
 }
 
 function handleRegister(payload) {
@@ -24,7 +49,7 @@ function handleStart(payload) {
 	$('#game-window').show();
         // TODO show opponent
 	initGame();
-	render();
+  startGame();
 
         flash("Game on!");
 
@@ -94,6 +119,8 @@ function die(event) {
 
 // 2 secs to cover 640x480 at 10f/s. So, to an approximation,
 // |velocity| should translate to 640 / 20 = 32.
+var FPS = 10;
+var msperframe = 1000 / 10;
 var game = new State();
 
 var scoreboard = [];
@@ -149,7 +176,6 @@ $('#signin').submit( function() {
 
 	log("Waiting for match ...");
         sock.send(event('register', username));
-
 	return false;
 });
 
@@ -160,13 +186,13 @@ function event(type, data) {
 
 function startGame() {
   game.status = 1;
-  renderTimer = setInterval('render()', 500);
+  renderTimer = setInterval(render, msperframe);
 }
 
 function restartGame() {
 	// TODO kill & restart render timer
   game.status = 1;
-  renderTimer = setInterval('render()', 500);
+  renderTimer = setInterval(render, msperframe);
 }
 
 function pauseGame() {
@@ -181,11 +207,14 @@ function stopGame() {
   clearInterval(renderTimer);
 }
 
+var model;
+
 function initGame() {
-	//
+  model = new State();
 }
 
 function render() {
+        model.tick();
 	// TODO find localPlayer
 	var canvas = document.getElementById('game-field'); // jquery didn't find this
 	var context = canvas.getContext('2d');
@@ -211,8 +240,8 @@ function render() {
 	context.beginPath();
 
 	// ontext.arc(x, y, r, n, Math.PI*2, true);
-	var ballX = canvas.width/2;
-	var ballY = canvas.height/2;
+	var ballX = model.ball.x;
+	var ballY = model.ball.y;
 	var radius = 10;
 	var other = 0;
 	context.arc(ballX, ballY, radius, other, Math.PI*2, true);
@@ -221,9 +250,8 @@ function render() {
 }
 
 function log(msg) {
-	$('#log-window').append('<p>' + msg + '</p>');
+  $('#log-window').append($('<p/>').text(msg));
 }
-
 
 // Sledging
 
