@@ -5,16 +5,23 @@ var KEYBOARD_O = 111;
 var KEYBOARD_P = 112;
 var KEYBOARD_L = 108;
 
+function Game() {
+	this.state = new State();
+}
+
 function State() {
-	this.p1 = new Position();
-	this.p2 = new Position();
+	this.p1 = new Player();
+	this.p2 = new Player();
 	this.ball = new Ball();
 	this.canvas = null;
 }
 
-function Position() {
+function Player() {
+	this.name = '';
+	this.x = 10;
 	this.y = 0;
 	this.h = 80;
+	this.w = 10;
 }
 
 function Ball() {
@@ -25,11 +32,12 @@ function Ball() {
 	this.vy = 0;
 }
 
-Position.prototype.move = function(delta) {
+Player.prototype.move = function(delta) {
 	// TODO smarter derek collision detection
+
 	// this calc needs to be finer, and account for movement
-	// increments that are smaller than the size of the increment
-	// when approaching the edge
+	// increments that are smaller/larger than the size of
+	// the gap to the edge, when approaching the edge
 
 	// log("position " + this.y + " delta: " + delta);
 	var y_min = 0 - 160;
@@ -40,15 +48,10 @@ Position.prototype.move = function(delta) {
 	}
 }
 
-function handleRegister(payload) {
-	console.log('register');
-	// NO-OP client -> server
+Ball.prototype.bounce = function() {
+	//
 }
 
-function handleStart(payload) {
-	console.log('start');
-	// NO-OP server -> client
-}
 
 // NB you can write text into the canvas
 function flash(msg, kind) {
@@ -61,23 +64,36 @@ function flash(msg, kind) {
   });
 }
 
+function handleRegister(payload) {
+	debug('register');
+	// NO-OP client -> server
+}
+
+function handleStart(payload) {
+	debug('start');
+	// NO-OP server -> client
+	game.p2.name = payload.name;
+	game.p2.h = payload.height;
+	startGame();
+}
+
 function handlePause(payload) {
-	console.log('pause');
+	debug('pause');
 	// NO-OP server -> client, client -> server
 }
 
 function handleRestart(payload) {
-	console.log('restart');
+	debug('restart');
 	// NO-OP server -> client, client -> server
 }
 
 function handleStop(payload) {
-	console.log('stop');
+	debug('stop');
 	// NO-OP server -> client
 }
 
 function handlePos(payload) {
-	console.log('pos');
+	debug('pos');
 	// NO-OP server -> client
 	if (isNaN(payload)) {
 		log("received NaN: " + payload);
@@ -88,24 +104,24 @@ function handlePos(payload) {
 }
 
 function handleWin(payload) {
-	console.log('win');
+	debug('win');
 	// NO-OP server -> client
 }
 
 function handleHighscore(payload) {
-	console.log('highscore');
+	debug('highscore');
 	// NO-OP server -> client
 }
 
-var dictionary = [];
-dictionary['register'] = handleRegister;
-dictionary['start'] = handleStart;
-dictionary['pause'] = handlePause;
-dictionary['restart'] = handleRestart;
-dictionary['stop'] = handleStop;
-dictionary['pos'] = handlePos;
-dictionary['win'] = handleWin;
-dictionary['highscore'] = handleHighscore;
+// var dictionary = [];
+// dictionary['register'] = handleRegister;
+// dictionary['start'] = handleStart;
+// dictionary['pause'] = handlePause;
+// dictionary['restart'] = handleRestart;
+// dictionary['stop'] = handleStop;
+// dictionary['pos'] = handlePos;
+// dictionary['win'] = handleWin;
+// dictionary['highscore'] = handleHighscore;
 
 function handleSledge(txt) {
   flash(txt, 'sledge');
@@ -126,11 +142,10 @@ var handlers = {
 
 // 2 secs to cover 640x480 at 10f/s
 var game = new State();
+var sock = new SockJS('/socks');
 
 var scoreboard = [];
 var highscores = [];
-
-var sock = new SockJS('/socks');
 var renderTimer = 0;
 
 sock.onopen = function() {
@@ -142,7 +157,7 @@ sock.onmessage = function(e) {
 	console.log('message', e.data);
 	log("Received message... " + e.data);
 	var json = JSON.parse(e.data);
-	var func = dictionary[json['event']];
+	var func = handlers[json['event']];
 	func(json.data);
 };
 
@@ -187,13 +202,7 @@ $('#signin').submit( function() {
 	$('#log-window').show();
 
 	log("Sending username...");
-    sock.send(event('register', username));
-
-	// temp testing, for renderer
-	$('#game-window').show();
-	initGame();
-	startGame();
-
+	initGame(username);
 	return false;
 });
 
@@ -201,11 +210,23 @@ function event(type, data) {
   return JSON.stringify({'event': type, 'data': data});
 }
 
+function initGame(username) {
+	log("Initialising game...");
+	game.canvas = document.getElementById('game-field'); // jquery didn't find this
+	game.p1.name = username;
+	game.p2.name = 'unknown';
+    sock.send(event('register', username));
+
+	// temp testing, for renderer
+	// TODO remove when this fires from callback event
+	startGame();
+}
+
 function startGame() {
   game.status = 1;
   renderTimer = setInterval('render()', FRAME_RATE);
   $(document).keypress( function(event) {
-	log("key: " + event.which);
+	debug("key: " + event.which);
 	switch (event.which) {
 		case KEYBOARD_Q:
 			game.p1.move(0 - 30);
@@ -221,6 +242,14 @@ function startGame() {
 			break;
 	}
   });
+  // <span id="localUserName">$localUser</span> vs <span id="remoteUserName">$remoteUser</span>
+
+  $('#game-title').append('<span id="localUserName">' + game.p1.name + '</span> vs <span id="remoteUserName">' + game.p2.name + '</span>');
+  $('#game-window').show();
+  var context = game.canvas.getContext('2d');
+  renderCountdown(context);
+  // start ball
+  fireBall();
 }
 
 function restartGame() {
@@ -242,15 +271,8 @@ function stopGame() {
   // TODO stop key listener
 }
 
-function initGame() {
-	log("Initialising game...");
-	game.canvas = document.getElementById('game-field'); // jquery didn't find this
-}
-
 // field is 400 high & 600 wide
 function render() {
-	// TODO find localPlayer
-	// 3var canvas = document.getElementById('game-field'); // jquery didn't find this
 	var context = game.canvas.getContext('2d');
 
 	// blank it out
@@ -266,6 +288,24 @@ function render() {
 	renderPaddle(context, '#cc9999', offset1, y1, game.p1.h);
 	renderPaddle(context, '#9999cc', offset2, y2, game.p2.h);
 	renderBall(context);
+}
+
+function renderCountdown(context) {
+	renderClear(context);
+	var i = 3;
+	setTimeout("displayCountdown(" + i + ")", 1000);
+}
+
+function displayCountdown(count) {
+	var x = 200;
+	var y = 200;
+	var w = 200;
+	var text = "Game starts in " + count;
+	var context = game.canvas.getContext('2d');
+	context.fillText(text, x, y, w);
+	if (count > 0) {
+		setTimeout("displayCountdown(" + (count - 1) + ")", 1000);
+	}
 }
 
 function renderClear(context) {
@@ -288,8 +328,18 @@ function renderBall(context) {
 	context.fill();
 }
 
+function fireBall() {
+	//
+}
+
 function log(msg) {
 	$('#log-window').append('<p>' + msg + '</p>');
+}
+
+function debug(msg) {
+	var textarea = document.getElementById('debug-window-data');
+	textarea.value += msg + '\n';
+	// $('#debug-window-data').value +=  msg + '\n';
 }
 
 // Sledging

@@ -27,6 +27,28 @@ div#log-window {
 	height: 200px;
 	border: 5px solid #ccc;
 }
+
+div#debug-window {
+	position: absolute;
+	top: 60px;
+	right: 20px;
+	margin: 0;
+	padding: 10px;
+	width: 200px;
+	height: 400px;
+	color: #c00;
+	background-color: #fff;
+	border: 1px solid #f00;
+}
+
+textarea#debug-window-data {
+	padding: 2px;
+	height: 380px;
+	width: 200px;
+	color: #c00;
+	border: 0 solid #fff;
+}
+
 div#game-window {
 	display: none;
 	margin: 0 auto 10px;
