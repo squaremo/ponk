@@ -1,7 +1,9 @@
 
 function State() {
-	this.p1x = 0;
 	this.p1y = 0;
+	this.p1paddleHeight = 80;
+	this.p2y = 0;
+	this.p2paddleHeight = 80;
 	this.ball = new Ball();
 }
 
@@ -22,6 +24,7 @@ function handleStart(payload) {
 	// NO-OP server -> client
 }
 
+// NB you can write text into the canvas
 function flash(msg, kind) {
   var elem = $('<p/>');
   if (kind) elem.addClass(kind);
@@ -133,6 +136,10 @@ $(document).ready( function() {
 	}
 });
 
+$(document).unload( function() {
+	stopGame();
+});
+
 $('#signin-button').click( function() {
 	$('#signin').submit();
 });
@@ -148,16 +155,15 @@ $('#signin').submit( function() {
 	$('#log-window').show();
 
 	log("Sending username...");
-        sock.send(event('register', username));
+    sock.send(event('register', username));
 
 	// temp testing, for renderer
 	$('#game-window').show();
 	initGame();
-	render();
+	startGame();
 
 	return false;
 });
-
 
 function event(type, data) {
   return JSON.stringify({'event': type, 'data': data});
@@ -165,13 +171,23 @@ function event(type, data) {
 
 function startGame() {
   game.status = 1;
-  renderTimer = setInterval('render()', 500);
+  renderTimer = setInterval('render()', 50);
+  $(document).keypress( function(event) {
+    var distance = (400 - game.p1paddleHeight) / 2;
+	if ((event.which == 111) && (game.p1y > (0 - distance))) {
+      game.p1y = game.p1y - 20; // up
+    }
+	else if (event.which == 108 && (game.p1y < distance)) {
+      game.p1y = game.p1y + 20; // down
+	}
+	// sock.send(event('pos', game.p1y));
+  });
 }
 
 function restartGame() {
-	// TODO kill & restart render timer
+  // TODO kill & restart render timer
   game.status = 1;
-  renderTimer = setInterval('render()', 500);
+  renderTimer = setInterval('render()', 50);
 }
 
 function pauseGame() {
@@ -181,21 +197,27 @@ function pauseGame() {
 }
 
 function stopGame() {
-	// TODO kill render timer
+  // TODO kill render timer
   game.status = 0;
   clearInterval(renderTimer);
+  // TODO stop key listener
 }
 
 function initGame() {
-	//
+	log("Initialising game...");
 }
 
+// field is 400 high & 600 wide
 function render() {
 	// TODO find localPlayer
 	var canvas = document.getElementById('game-field'); // jquery didn't find this
 	var context = canvas.getContext('2d');
-	// field is 400 high & 600 wide
-	// context.fillRect(x, y, w, h);
+
+	// blank it out
+	context.fillStyle = '#ffffff';
+	context.fillRect(0, 0, 600, 400);
+
+	// this could move to State
 	var offset = 10;
 	var paddleWidth = 10;
 	var localH = 80;
@@ -204,8 +226,10 @@ function render() {
 	var localX = offset;
 	var remoteX = canvas.width - (offset + paddleWidth);
 
-	var localY = canvas.height/2 - (localH/2); // temp, needs further calc
-	var remoteY = canvas.height/2 - (remoteH/2); // temp, needs further calc
+	// use offsets with range 200 : -200
+	// TODO derek collision detection
+	var localY = canvas.height/2 - (localH/2) + game.p1y;
+	var remoteY = canvas.height/2 - (remoteH/2) + game.p2y;
 
 	context.fillStyle = '#cc9999';
 	context.fillRect(localX, localY, paddleWidth, localH);
@@ -215,12 +239,13 @@ function render() {
 	context.fillStyle = '#333333';
 
 	// ontext.arc(x, y, r, n, Math.PI*2, true);
-	var ballX = canvas.width/2;
-	var ballY = canvas.height/2;
+	var ballX = canvas.width/2 - 5;
+	var ballY = canvas.height/2 - 5;
 	drawBall(context, ballX, ballY);
 }
 
 function drawBall(context, x, y) {
+	// log("drawing ball at " + new Date().getTime())
 	var radius = 10;
 	var startAngle = 0;
 	var endAngle = Math.PI*2;

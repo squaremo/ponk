@@ -80,22 +80,27 @@
             <h2 class="center">
 				<span id="localUserName">$localUser</span> vs <span id="remoteUserName">$remoteUser</span>
 			</h2>
-            <div id="flash"></div>
+            <div id="flash"></div> <!-- NB you can write text into the canvas -->
             <div id="game-frame">
               <canvas id="game-field" width="620" height="400">Your browser is too crap to play this game</canvas>
             </div>
           </div>
           <div id="log-window"></div>
           <p>
-            &nbsp;
+            &nbsp;<!-- this space required to keep boxes in place -->
           </p>
         </div>
         <div class="span2">
           <h2>Scores</h2>
-          <p>Current Score</p>
-          <p>...</p>
-          <p>High Scores</p>
-          <p>...</p>
+          <div id="score-frame">
+            <p>Current Score</p>
+            <p>...</p>
+            <p>High Scores</p>
+            <p>...</p>
+          </div>
+          <hr/>
+          <h2>Instructions</h2>
+          <p>Use the 'O' and 'L' keys to move your paddle up and down.</p>
         </div>
       </div>
       <hr>
