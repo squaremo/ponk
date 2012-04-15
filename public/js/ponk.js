@@ -25,6 +25,16 @@ function Ball() {
 	this.vy = 0;
 }
 
+Position.prototype.move = function(delta) {
+	log("position " + this.y + " delta: " + delta);
+	// this calc needs to be finer, and account for movement
+	// increments that are smaller than the size of the increment
+	// when approaching the edge
+
+	// TODO derek collision detection
+	this.y = this.y + delta;
+}
+
 function handleRegister(payload) {
 	console.log('register');
 	// NO-OP client -> server
@@ -64,6 +74,12 @@ function handleStop(payload) {
 function handlePos(payload) {
 	console.log('pos');
 	// NO-OP server -> client
+	if (isNaN(payload)) {
+		log("received NaN: " + payload);
+	}
+	else {
+		game.p2.move(payload);
+	}
 }
 
 function handleWin(payload) {
@@ -184,38 +200,21 @@ function startGame() {
   game.status = 1;
   renderTimer = setInterval('render()', FRAME_RATE);
   $(document).keypress( function(event) {
-    var distance = (400 - game.p1h) / 2;
-	// this calc needs to be finer, and account for movement
-	// increments that are smaller than the size of the increment
-	// when approaching the edge
 	log("key: " + event.which);
 	switch (event.which) {
 		case KEYBOARD_Q:
-			game.p1.y = game.p1.y - 30;
+			game.p1.move(0 - 30);
 			break;
 		case KEYBOARD_A:
-			game.p1.y = game.p1.y + 30;
+			game.p1.move(30);
 			break;
 		case KEYBOARD_P:
-			game.p2.y = game.p2.y - 30;
+			game.p2.move(0 - 30);
 			break;
 		case KEYBOARD_L:
-			game.p2.y = game.p2.y + 30;
+			game.p2.move(30);
 			break;
 	}
-	// if ((event.which == KEYBOARD_Q) && (game.p1y > (0 - distance))) {
-	//       game.p1y = game.p1y - 30; // up
-	//     }
-	// else if (event.which == KEYBOARD_A && (game.p1y < distance)) {
-	//       game.p1y = game.p1y + 30; // down
-	// }
-	// else if ((event.which == KEYBOARD_P) && (game.p2y > (0 - distance))) {
-	//       game.p2y = game.p2y - 30; // up
-	//     }
-	// else if (event.which == KEYBOARD_L && (game.p2y < distance)) {
-	//       game.p2y = game.p2y + 30; // down
-	// }
-	// sock.send(event('pos', game.p1y));
   });
 }
 
@@ -256,7 +255,6 @@ function render() {
 	var offset1 = 10;
 	var offset2 = game.canvas.width - (offset1 * 2);
 
-	// TODO derek collision detection
 	var y1 = ((game.canvas.height - game.p1.h) / 2) + game.p1.y;
 	var y2 = ((game.canvas.height - game.p2.h) / 2) + game.p2.y;
 
