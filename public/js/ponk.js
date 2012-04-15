@@ -26,13 +26,18 @@ function Ball() {
 }
 
 Position.prototype.move = function(delta) {
-	log("position " + this.y + " delta: " + delta);
+	// TODO smarter derek collision detection
 	// this calc needs to be finer, and account for movement
 	// increments that are smaller than the size of the increment
 	// when approaching the edge
 
-	// TODO derek collision detection
-	this.y = this.y + delta;
+	// log("position " + this.y + " delta: " + delta);
+	var y_min = 0 - 160;
+	var y_max = 160;
+	var y_new = this.y + delta;
+	if ((y_new > y_min) && (y_new < y_max)) {
+		this.y = y_new;
+	}
 }
 
 function handleRegister(payload) {
