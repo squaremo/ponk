@@ -55,12 +55,20 @@ State.prototype.tick = function() {
   var rht = game.player.y;
   var rhb = game.player.y + game.player.h;
 
-  if ((ble < 30) && (ball.y > lht) && (ball.y < lhb)) {
+  // left edge, NB make sure it's travelling that way
+  if ((ble < 30) &&
+      (ball.y > lht) && (ball.y < lhb) &&
+      ball.vx < 0) {
     ball.vx = -ball.vx;
   }
-  if ((bre >= (canvas.width - 25)) && (ball.y > rht) && (ball.y < rhb)) {
+
+  // right edge
+  if ((bre >= (canvas.width - 25)) &&
+      (ball.y > rht) && (ball.y < rhb) &&
+      ball.vx > 0) {
     ball.vx = -ball.vx;
   }
+
   if (ble < 0) {
     gameWinner();
   }
@@ -104,7 +112,7 @@ Player.prototype.move = function(delta) {
 }
 
 Player.prototype.moveUp = function() {
-	this.move(0 - this.h);
+	this.move(-this.h);
 }
 
 Player.prototype.moveDown = function() {
