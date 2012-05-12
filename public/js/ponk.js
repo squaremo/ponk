@@ -10,15 +10,15 @@ requestAnimFrame =
   };
 
 var world = {
-  player: {x: 0, y: 0, score: 0},
-  opponent: {x: 0, y: 0, score: 0},
+  player: {x: 0, y: 0, score: 0, key: false},
+  opponent: {x: 0, y: 0, score: 0, key: false},
   ballpuck: {x: 100, y: 100, vx: 0, vy: 0}
 }
 
 var canvas, last, width, height, playergoalx, opponentgoalx;
 
 var radius = 10, batpaddlewidth = 12, batpaddleheight = 80,
-batpaddletravel = 15;
+batpaddletravel = 0.25;
 
 function init() {
   $('#game-window').show();
@@ -73,6 +73,22 @@ function advanceWorld(dt) {
   var ballpuck = world.ballpuck;
   var player = world.player;
   var opponent = world.opponent;
+  
+  switch (player.key) {
+  case 'Q':
+    player.y -= dt * batpaddletravel;
+    break;
+  case 'A':
+    player.y += dt * batpaddletravel;
+  }
+  switch (opponent.key) {
+  case 'P':
+    opponent.y -= dt * batpaddletravel;
+    break;
+  case 'L':
+    opponent.y += dt * batpaddletravel;
+  }
+
   if (ballpuck.stuck) {
     stuckBallpuck();
   }
@@ -111,7 +127,6 @@ function advanceWorld(dt) {
 function render(since) {
   context.clearRect(0, 0, width, height);
   var ballpuck = world.ballpuck;
-  //console.log(ballpuck);
   context.fillStyle = '#333333';
   context.beginPath();
   context.arc(ballpuck.x, ballpuck.y, radius, 0, (Math.PI * 2), true);
@@ -133,7 +148,7 @@ function startGame() {
   init();
 }
 
-$(document).bind('keypress', function(event) {
+$(document).bind('keydown', function(event) {
   var key = String.fromCharCode(event.which);
   switch (key) {
   case ' ':
@@ -141,17 +156,27 @@ $(document).bind('keypress', function(event) {
       launch();
     }
     return false;
-  case 'q':
-    world.player.y -= batpaddletravel;
+  case 'Q':
+  case 'A':
+    world.player.key = key;
     return false;
-  case 'a':
-    world.player.y += batpaddletravel;
+  case 'P':
+  case 'L':
+    world.opponent.key = key;
     return false;
-  case 'p':
-    world.opponent.y -= batpaddletravel;
+  }
+});
+
+$(document).bind('keyup', function(event) {
+  var key = String.fromCharCode(event.which);
+  switch (key) {
+  case 'Q':
+  case 'A':
+    world.player.key = false;
     return false;
-  case 'l':
-    world.opponent.y += batpaddletravel;
+  case 'P':
+  case 'L':
+    world.opponent.key = false;
     return false;
   }
 });
